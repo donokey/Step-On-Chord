@@ -46,3 +46,10 @@ export interface SaveFileOptions {
   /** 要写入的文本内容（UTF-8） */
   content: string
 }
+
+/** 设置页读取的应用设置快照 */
+export interface AppSettings {
+  refineQualities: boolean
+  /** 模型目录绝对路径（resources/models） */
+  modelsDir: string
+}

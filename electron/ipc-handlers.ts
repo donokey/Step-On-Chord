@@ -1,9 +1,11 @@
-import { app, BrowserWindow, dialog, ipcMain } from 'electron'
+import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { writeFile } from 'node:fs/promises'
+import path from 'node:path'
 import type { HistoryStore } from './db'
 import { listAudioFilesInFolder, writeTextFiles, type BatchWriteItem } from './files'
+import type { SettingsStore } from './settings'
 import type { SidecarManager } from './sidecar'
-import type { NewHistoryEntry, SaveFileOptions } from './types'
+import type { AppSettings, NewHistoryEntry, SaveFileOptions } from './types'
 
 const AUDIO_FILE_FILTERS = [
   { name: '音频文件', extensions: ['mp3', 'wav', 'flac'] },
@@ -15,6 +17,7 @@ export function registerIpcHandlers(
   getWindow: () => BrowserWindow | null,
   sidecar: SidecarManager,
   history: HistoryStore,
+  settings: SettingsStore,
 ): void {
   // ---- 窗口控制（frameless 自定义标题栏） ----
   ipcMain.on('window:minimize', () => getWindow()?.minimize())
@@ -81,4 +84,23 @@ export function registerIpcHandlers(
   ipcMain.handle('history:update-json', (_event, id: number, resultJson: string) =>
     history.updateResultJson(id, resultJson),
   )
+  ipcMain.handle('history:clear', () => history.clear())
+
+  // ---- 设置（electron-store）与系统 Shell ----
+  ipcMain.handle('settings:get', (): AppSettings => {
+    const modelsDir = app.isPackaged
+      ? path.join(process.resourcesPath, 'models')
+      : path.join(app.getAppPath(), 'resources', 'models')
+    return { refineQualities: settings.refineQualities, modelsDir }
+  })
+  ipcMain.handle('settings:set-refine', (_event, enabled: boolean) => {
+    settings.setRefineQualities(Boolean(enabled))
+    return settings.refineQualities
+  })
+  ipcMain.handle('shell:open-path', (_event, target: string) => shell.openPath(target))
+  ipcMain.handle('shell:open-external', (_event, url: string) => {
+    // 仅放行 http(s) 链接，防止 file:// 等协议滥用
+    if (/^https?:\/\//i.test(url)) return shell.openExternal(url)
+    return Promise.resolve()
+  })
 }

@@ -2,12 +2,15 @@ import { app, BrowserWindow } from 'electron'
 import path from 'node:path'
 import { HistoryStore } from './db'
 import { registerIpcHandlers } from './ipc-handlers'
+import { SettingsStore } from './settings'
 import { SidecarManager } from './sidecar'
 
 const isDev = !app.isPackaged
 
 let mainWindow: BrowserWindow | null = null
-const sidecar = new SidecarManager()
+const settings = new SettingsStore()
+// sidecar spawn 时从设置读取环境变量覆盖（七和弦精炼等引擎级开关）
+const sidecar = new SidecarManager(() => settings.sidecarEnv())
 let history: HistoryStore | null = null
 
 function createWindow(): void {
@@ -58,7 +61,7 @@ let isQuitting = false
 
 app.whenReady().then(() => {
   history = new HistoryStore(path.join(app.getPath('userData'), 'history.db'))
-  registerIpcHandlers(() => mainWindow, sidecar, history)
+  registerIpcHandlers(() => mainWindow, sidecar, history, settings)
 
   // sidecar 异步启动，不阻塞窗口；状态通过事件推送到 UI
   void sidecar.start().catch((err: Error) => {

@@ -80,6 +80,11 @@ export class HistoryStore {
     this.db.prepare(`UPDATE analyses SET result_json = ? WHERE id = ?`).run(resultJson, id)
   }
 
+  /** 清空全部历史记录（设置页「清空分析历史」） */
+  clear(): void {
+    this.db.prepare(`DELETE FROM analyses`).run()
+  }
+
   close(): void {
     this.db.close()
   }

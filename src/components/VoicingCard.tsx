@@ -12,6 +12,7 @@ export function VoicingCard({ candidate }: { candidate: VoicingCandidate }) {
           {preferred && <span className="ml-1 text-success">✓</span>}
         </p>
         {candidate.position > 1 && <p>{candidate.position} 把位</p>}
+        {candidate.barres.length > 0 && <p className="text-magic-light">横按 {candidate.barres.join('、')} 品</p>}
         {candidate.difficulty !== null && <p>难度 {candidate.difficulty}/10</p>}
         {candidate.annotation?.commonness !== undefined && <p>常用度 {candidate.annotation.commonness}</p>}
         {candidate.tags.length > 0 && <p className="truncate text-ink-faint">{candidate.tags.join(' · ')}</p>}

@@ -34,6 +34,13 @@ export class SidecarManager extends EventEmitter {
   private stoppingIntentionally = false
   private startPromise: Promise<number> | null = null
   private stdoutBuffer = ''
+  /** spawn 时的环境变量覆盖（如 CHORDCRAFT_REFINE_QUALITIES），由主进程按设置注入 */
+  private readonly envProvider: () => Record<string, string>
+
+  constructor(envProvider: () => Record<string, string> = () => ({})) {
+    super()
+    this.envProvider = envProvider
+  }
 
   getInfo(): SidecarInfo {
     return { ...this.info }
@@ -121,7 +128,10 @@ export class SidecarManager extends EventEmitter {
   private spawnAndWaitReady(command: string, args: string[], expectedPort: number): Promise<number> {
     return new Promise((resolve, reject) => {
       console.log(`[sidecar] spawn: ${command} ${args.join(' ')}`)
-      const proc = spawn(command, args, { stdio: ['ignore', 'pipe', 'pipe'] })
+      const proc = spawn(command, args, {
+        stdio: ['ignore', 'pipe', 'pipe'],
+        env: { ...process.env, ...this.envProvider() },
+      })
       this.proc = proc
       this.stdoutBuffer = ''
 

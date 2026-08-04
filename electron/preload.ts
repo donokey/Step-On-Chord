@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer, webUtils, type IpcRendererEvent } from 'electron'
 import type { SidecarInfo } from './sidecar'
-import type { HistoryRecord, HistorySummary, NewHistoryEntry, SaveFileOptions } from './types'
+import type { AppSettings, HistoryRecord, HistorySummary, NewHistoryEntry, SaveFileOptions } from './types'
 
 /** 订阅主进程推送事件，返回取消订阅函数 */
 function subscribe<T>(channel: string) {
@@ -55,6 +55,19 @@ const api = {
     /** 更新已有记录的结果 JSON（手动校正持久化） */
     updateJson: (id: number, resultJson: string): Promise<void> =>
       ipcRenderer.invoke('history:update-json', id, resultJson),
+    /** 清空全部历史记录 */
+    clear: (): Promise<void> => ipcRenderer.invoke('history:clear'),
+  },
+  /** 应用设置（electron-store 持久化） */
+  settings: {
+    get: (): Promise<AppSettings> => ipcRenderer.invoke('settings:get'),
+    /** 七和弦自动精炼开关（写盘后需重启引擎生效） */
+    setRefine: (enabled: boolean): Promise<boolean> => ipcRenderer.invoke('settings:set-refine', enabled),
+  },
+  /** 系统 Shell（打开文件夹 / 外部链接） */
+  shell: {
+    openPath: (target: string): Promise<string> => ipcRenderer.invoke('shell:open-path', target),
+    openExternal: (url: string): Promise<void> => ipcRenderer.invoke('shell:open-external', url),
   },
 }
 

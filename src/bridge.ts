@@ -38,6 +38,15 @@ const fallback: ChordcraftApi = {
     insert: async () => -1,
     remove: async () => {},
     updateJson: async () => {},
+    clear: async () => {},
+  },
+  settings: {
+    get: async () => ({ refineQualities: false, modelsDir: '' }),
+    setRefine: async () => false,
+  },
+  shell: {
+    openPath: async () => '',
+    openExternal: async () => {},
   },
 }
 
