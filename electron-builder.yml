@@ -1,0 +1,31 @@
+# Step On Chord — electron-builder 配置（Phase 1 基础版，Phase 5 完善打包/NSIS/自动更新）
+appId: com.chordcraft.desktop
+productName: Step On Chord
+copyright: Copyright © 2026 ChordCraft
+
+directories:
+  output: release
+  buildResources: resources
+
+files:
+  - dist/
+  - dist-electron/
+  - package.json
+
+# Phase 5 启用：Python sidecar（PyInstaller onedir）与模型权重作为额外资源打包
+# extraResources:
+#   - from: resources/python-backend
+#     to: python-backend
+#   - from: resources/models
+#     to: models
+
+win:
+  target:
+    - nsis
+  # icon: resources/icons/icon.ico  # Phase 5 补充应用图标
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  shortcutName: Step On Chord

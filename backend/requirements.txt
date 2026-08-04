@@ -1,0 +1,13 @@
+# Step On Chord sidecar - analysis engine dependencies
+fastapi>=0.110
+uvicorn[standard]>=0.27
+numpy>=1.24
+scipy>=1.10
+soundfile>=0.12
+librosa>=0.10
+mir_eval>=0.7
+PyYAML>=6.0
+# torch is required by BTC chord recognition (chord_recognition.py) and SongFormer.
+# Install the CPU build FIRST to avoid pulling the ~2.5GB CUDA wheel from PyPI:
+#   py -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+torch>=2.2

@@ -1,0 +1,498 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ---- 像素魔法风 · 全局变量（深夜魔法书房） ---- */
+:root {
+  --bg-deep: #1c1410;
+  --bg-panel: #2a1f1a;
+  --border: #4a3828;
+  --border-glow: #d4a039;
+  --accent-warm: #d4a039;
+  --accent-cool: #3a6a7a;
+  --accent-magic: #7b5ea7;
+  --text-primary: #e8dcc8;
+  --text-dim: #8a7a6a;
+  --success: #5a9a5a;
+  --error: #a04040;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    @apply h-full;
+  }
+
+  body {
+    @apply select-none overflow-hidden bg-base font-vt text-base text-ink antialiased;
+  }
+}
+
+@layer components {
+  /* 像素按钮：2px 硬边无圆角，hover 边框变金 + 文字如符文被点亮，按压下移 2px + 边框变暗 */
+  .btn-pixel {
+    @apply inline-flex items-center gap-1.5 border-2 border-edge bg-panel px-3 py-1.5 font-vt text-sm text-ink transition-all duration-75 hover:border-edge-glow hover:text-warm hover:shadow-[inset_0_1px_0_var(--border-glow)] hover:[text-shadow:0_0_6px_rgba(212,160,57,0.55)] active:translate-y-[2px] active:border-[#2f2318] active:shadow-none;
+  }
+
+  /* 像素面板：2px 硬边无圆角 + 凹陷镶嵌感 + 外侧装裱细线（双线框） */
+  .panel-pixel {
+    @apply border-2 border-edge bg-panel/70;
+    box-shadow:
+      inset 0 1px 0 rgba(232, 220, 200, 0.05),
+      inset 0 0 18px rgba(10, 6, 4, 0.35);
+    outline: 1px solid rgba(74, 56, 40, 0.55);
+    outline-offset: 3px;
+  }
+
+  /* 旧书页边角花纹：四角 L 形像素角花（伪元素，免图片） */
+  .pixel-corners {
+    position: relative;
+  }
+  .pixel-corners::before,
+  .pixel-corners::after {
+    content: '';
+    position: absolute;
+    left: -2px;
+    right: -2px;
+    height: 8px;
+    pointer-events: none;
+    background:
+      linear-gradient(var(--border-glow), var(--border-glow)) left top / 8px 2px no-repeat,
+      linear-gradient(var(--border-glow), var(--border-glow)) left top / 2px 8px no-repeat,
+      linear-gradient(var(--border-glow), var(--border-glow)) right top / 8px 2px no-repeat,
+      linear-gradient(var(--border-glow), var(--border-glow)) right top / 2px 8px no-repeat;
+    opacity: 0.65;
+  }
+  .pixel-corners::before {
+    top: -2px;
+  }
+  .pixel-corners::after {
+    bottom: -2px;
+    transform: scaleY(-1);
+  }
+
+  /* 面板色调分化（极淡 tint，区分功能分区） */
+  .panel-tint-warm {
+    background-image: linear-gradient(rgba(212, 160, 57, 0.045), rgba(212, 160, 57, 0.045));
+  }
+  .panel-tint-cool {
+    background-image: linear-gradient(rgba(58, 106, 122, 0.06), rgba(58, 106, 122, 0.06));
+  }
+  .panel-tint-magic {
+    background-image: linear-gradient(rgba(123, 94, 167, 0.06), rgba(123, 94, 167, 0.06));
+  }
+}
+
+/* 深夜书房氛围：顶部烛光光晕（7% 克制亮度） + 四周暗角 + 羊皮纸噪点（三层叠加） */
+.bg-atmosphere {
+  background-image:
+    radial-gradient(ellipse 75% 42% at 50% -8%, rgba(212, 160, 57, 0.07), transparent 62%),
+    radial-gradient(rgba(232, 220, 200, 0.05) 1px, transparent 1px);
+  background-size: auto, 3px 3px;
+  box-shadow: inset 0 0 140px rgba(10, 6, 4, 0.55);
+}
+
+/* 漂浮魔法微尘：缓慢上浮 + 闪烁（颜色/位置由组件内联样式注入） */
+.magic-dust {
+  position: absolute;
+  opacity: 0;
+  box-shadow: 0 0 6px currentColor;
+  animation: dust-float linear infinite;
+  pointer-events: none;
+}
+@keyframes dust-float {
+  0% {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  20% {
+    opacity: 0.9;
+  }
+  60% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-22px);
+  }
+}
+
+/* 宝石质感色块（和弦/段落条共用）：顶部亮高光 + 底部暗线 */
+.pixel-gem {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.22),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* 当前播放和弦：脉动金框 */
+.chord-active {
+  animation: chord-pulse 1.6s ease-in-out infinite;
+}
+@keyframes chord-pulse {
+  0%,
+  100% {
+    filter: brightness(1.25);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+      inset 0 0 0 1px var(--border-glow),
+      0 0 6px rgba(212, 160, 57, 0.4);
+  }
+  50% {
+    filter: brightness(1.4);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+      inset 0 0 0 1px var(--border-glow),
+      0 0 12px rgba(212, 160, 57, 0.7);
+  }
+}
+
+/* 播放头星尾微粒 */
+.playhead-spark {
+  position: absolute;
+  left: -2px;
+  width: 3px;
+  height: 3px;
+  background: var(--border-glow);
+  box-shadow: 0 0 5px var(--border-glow);
+  animation: spark-twinkle 1.4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* 播放头光晕拖尾（向左渐隐的暖金光带） */
+.playhead-trail {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 100%;
+  width: 14px;
+  background: linear-gradient(to left, rgba(212, 160, 57, 0.28), transparent);
+  pointer-events: none;
+}
+@keyframes spark-twinkle {
+  0%,
+  100% {
+    opacity: 0.2;
+    transform: scale(0.7);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+/* 属性数值金色微光 */
+.stat-value-glow {
+  text-shadow: 0 0 8px rgba(212, 160, 57, 0.35);
+}
+
+/* 和弦块 hover：外发光（金色光晕，像被烛火照亮） */
+.chord-block {
+  transition:
+    box-shadow 120ms ease-out,
+    filter 120ms ease-out;
+}
+.chord-block:hover {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.25),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.35),
+    0 0 10px rgba(212, 160, 57, 0.45);
+}
+
+/* idle 巫师魔杖尖端偶尔闪光 */
+.wand-twinkle {
+  animation: wand-glint 4.2s ease-in-out infinite;
+}
+@keyframes wand-glint {
+  0%,
+  86%,
+  100% {
+    opacity: 0.55;
+  }
+  91% {
+    opacity: 1;
+  }
+}
+
+/* 完成气泡（celebrate 时巫师头顶冒出） */
+.speech-bubble {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 3px 7px;
+  background: var(--text-primary);
+  color: var(--bg-deep);
+  border: 2px solid var(--bg-deep);
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+  font-size: 13px;
+  line-height: 1.2;
+  white-space: nowrap;
+  animation: bubble-pop 0.4s ease-out;
+  pointer-events: none;
+  z-index: 30;
+}
+.speech-bubble::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 4px solid transparent;
+  border-top-color: var(--bg-deep);
+}
+@keyframes bubble-pop {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(6px) scale(0.8);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0) scale(1);
+  }
+}
+
+/* 巫师星座环绕（三颗小星绕圈） */
+.wizard-orbit {
+  position: absolute;
+  inset: -8px;
+  animation: orbit-spin 9s linear infinite;
+  pointer-events: none;
+}
+.orbit-star {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: var(--border-glow);
+  box-shadow: 0 0 5px var(--border-glow);
+}
+.orbit-star-a {
+  top: 0;
+  left: 50%;
+}
+.orbit-star-b {
+  bottom: 12%;
+  left: 0;
+  background: var(--accent-magic);
+  box-shadow: 0 0 5px var(--accent-magic);
+}
+.orbit-star-c {
+  right: 0;
+  bottom: 40%;
+}
+@keyframes orbit-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* frameless 窗口：标题栏拖拽区域 */
+.app-drag {
+  -webkit-app-region: drag;
+}
+.app-no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* ---- 像素巫师动画 ---- */
+.wizard-idle {
+  animation: wizard-float 2.6s ease-in-out infinite;
+}
+.wizard-casting {
+  animation: wizard-cast 0.7s ease-in-out infinite;
+}
+.wizard-celebrate {
+  animation: wizard-cheer 0.9s ease-in-out infinite;
+}
+.wizard-listening {
+  animation: wizard-nod 1.1s ease-in-out infinite;
+}
+@keyframes wizard-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+@keyframes wizard-cast {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  40%,
+  60% {
+    transform: translateY(-4px) rotate(-3deg);
+  }
+}
+@keyframes wizard-cheer {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  40%,
+  60% {
+    transform: translateY(-5px);
+  }
+}
+@keyframes wizard-nod {
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+  50% {
+    transform: rotate(2.5deg);
+  }
+}
+
+/* 眨眼（idle 状态，眼睛格子周期性隐藏） */
+.wizard-eye {
+  animation: wizard-blink 3.8s infinite;
+}
+@keyframes wizard-blink {
+  0%,
+  93%,
+  100% {
+    opacity: 1;
+  }
+  95%,
+  97% {
+    opacity: 0;
+  }
+}
+
+/* 魔法星星粒子（casting 状态周围飘散） */
+.magic-star {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: var(--border-glow);
+  box-shadow: 0 0 8px var(--border-glow);
+  opacity: 0;
+  animation: star-rise 1.2s ease-out infinite;
+  pointer-events: none;
+}
+.magic-star-a {
+  right: -14px;
+  top: 6px;
+}
+.magic-star-b {
+  left: -16px;
+  top: 12px;
+  animation-delay: 0.4s;
+}
+.magic-star-c {
+  right: -6px;
+  top: -4px;
+  background: var(--accent-magic);
+  box-shadow: 0 0 8px var(--accent-magic);
+  animation-delay: 0.8s;
+}
+.magic-star-d {
+  left: -6px;
+  top: -8px;
+  background: var(--accent-magic);
+  box-shadow: 0 0 8px var(--accent-magic);
+  animation-delay: 0.2s;
+}
+@keyframes star-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(4px) scale(0.6);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-16px) scale(1);
+  }
+}
+
+/* 庆祝彩纸（celebrate 状态，金色/紫色小方块下落） */
+.confetti {
+  position: absolute;
+  top: -6px;
+  width: 4px;
+  height: 4px;
+  opacity: 0;
+  animation: confetti-fall 1.6s ease-in infinite;
+  pointer-events: none;
+}
+.confetti-a {
+  left: -12px;
+  background: var(--border-glow);
+}
+.confetti-b {
+  right: -12px;
+  background: var(--accent-magic);
+  animation-delay: 0.3s;
+}
+.confetti-c {
+  left: 40%;
+  background: var(--success);
+  animation-delay: 0.6s;
+}
+.confetti-d {
+  right: 30%;
+  background: var(--border-glow);
+  animation-delay: 0.9s;
+}
+@keyframes confetti-fall {
+  0% {
+    opacity: 0;
+    transform: translateY(0) rotate(0deg);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(56px) rotate(240deg);
+  }
+}
+
+/* 完成后的时间轴金粒子（少量缓慢飘散，不卡） */
+.timeline-sparkle {
+  position: absolute;
+  width: 3px;
+  height: 3px;
+  background: var(--border-glow);
+  box-shadow: 0 0 5px var(--border-glow);
+  opacity: 0;
+  animation: star-rise 2.4s ease-out infinite;
+  pointer-events: none;
+}
+
+/* 困惑状态的问号脉动 */
+.confused-mark {
+  animation: mark-pulse 1s ease-in-out infinite;
+}
+@keyframes mark-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+/* 滚动条（旧木色系，像素硬边） */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #4a3828;
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #d4a039;
+}

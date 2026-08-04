@@ -1,0 +1,11 @@
+{
+  "周杰伦 - 晴天.mp3": {"key": "G", "mode": "major", "verse_roots": ["E", "C", "G", "D"], "source": "公开吉他谱（G调/Em循环）", "confidence": "high"},
+  "The Beatles - Let It Be.mp3": {"key": "C", "mode": "major", "verse_roots": ["C", "G", "A", "F"], "source": "公开谱 C-G-Am-F", "confidence": "high"},
+  "The Beatles - Yesterday.mp3": {"key": "F", "mode": "major", "verse_roots": ["F", "E", "D", "Bb"], "source": "公开谱 F-Em7-A7-Dm-Bb", "confidence": "high"},
+  "Frank Sinatra - Fly Me to the Moon.mp3": {"key": "C", "mode": "major", "verse_roots": ["C", "D", "E", "A"], "source": "标准爵士谱 Cmaj7-Dm7-G7-Em7-A7", "confidence": "high"},
+  "Bill Evans - Autumn Leaves (1959).mp3": {"key": "G", "mode": "minor", "verse_roots": ["C", "F", "Bb", "Eb", "A", "D", "G"], "source": "本上传为G小调版（Cm7-F7-Bbmaj7-Ebmaj7-Am7b5-D7-Gm）", "confidence": "medium"},
+  "周杰伦 - 稻香.mp3": {"key": "A", "mode": "major", "verse_roots": ["A", "E", "F#", "D"], "source": "原调A，I-V-vi-IV", "confidence": "medium"},
+  "Dave Brubeck - Take Five.mp3": {"key": "Eb", "mode": "minor", "verse_roots": [], "source": "调性已知；曲式为ostinato，根音序列不适用", "confidence": "medium"},
+  "陈奕迅 - 十年.mp3": {"key": null, "mode": null, "verse_roots": [], "source": "待补", "confidence": "pending"},
+  "Carpenters - Yesterday Once More.mp3": {"key": null, "mode": null, "verse_roots": [], "source": "待补", "confidence": "pending"}
+}

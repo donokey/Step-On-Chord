@@ -1,0 +1,40 @@
+node_modules/
+dist/
+dist-electron/
+release/
+*.local
+
+# Python
+__pycache__/
+*.pyc
+backend/build/
+backend/dist/
+backend/venv/
+.venv/
+
+# 模型权重与参考源码（不入 git）
+resources/models/
+reference/
+
+# 捆绑的 ffmpeg 二进制（约 200MB，构建时自备）
+resources/ffmpeg/
+
+# 测试音频（版权歌曲，仅本地使用）
+test-audio/
+test-tone.wav
+
+# 内部协作文档（非公开内容）
+qoder-startup-prompt.md
+chordcraft-qoder-tasks.md
+chordcraft-desktop-architecture.md
+
+# 评估产物（脚本与 ground truth 入库，结果不入库）
+eval/eval_results.json
+eval/eval_log.txt
+eval/tested_history.jsonl
+eval/accuracy_trend.jsonl
+eval/reports/
+
+# 系统文件
+.DS_Store
+Thumbs.db
