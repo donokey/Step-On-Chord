@@ -1,6 +1,14 @@
 import { contextBridge, ipcRenderer, webUtils, type IpcRendererEvent } from 'electron'
 import type { SidecarInfo } from './sidecar'
-import type { AppSettings, HistoryRecord, HistorySummary, NewHistoryEntry, SaveFileOptions } from './types'
+import type {
+  AppSettings,
+  HistoryRecord,
+  HistorySummary,
+  ModelsProgress,
+  ModelsStatus,
+  NewHistoryEntry,
+  SaveFileOptions,
+} from './types'
 
 /** 订阅主进程推送事件，返回取消订阅函数 */
 function subscribe<T>(channel: string) {
@@ -57,6 +65,12 @@ const api = {
       ipcRenderer.invoke('history:update-json', id, resultJson),
     /** 清空全部历史记录 */
     clear: (): Promise<void> => ipcRenderer.invoke('history:clear'),
+  },
+  /** 模型权重（首启下载页）：状态检测 / 一键下载 / 进度推送 */
+  models: {
+    status: (): Promise<ModelsStatus> => ipcRenderer.invoke('models:status'),
+    download: (): Promise<{ ok: boolean; error?: string }> => ipcRenderer.invoke('models:download'),
+    onProgress: subscribe<ModelsProgress>('models:progress'),
   },
   /** 应用设置（electron-store 持久化） */
   settings: {

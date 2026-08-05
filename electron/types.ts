@@ -50,6 +50,34 @@ export interface SaveFileOptions {
 /** 设置页读取的应用设置快照 */
 export interface AppSettings {
   refineQualities: boolean
-  /** 模型目录绝对路径（resources/models） */
+  /** 模型目录绝对路径（打包后为用户目录下的 models） */
   modelsDir: string
+}
+
+/** 单个待检测的模型权重文件 */
+export interface ModelWeightFile {
+  id: string
+  name: string
+  /** 相对模型根目录的目标路径（展示/手动放置说明用） */
+  target: string
+  have: boolean
+}
+
+/** 模型完整性状态（首启下载页用） */
+export interface ModelsStatus {
+  isPackaged: boolean
+  modelsDir: string
+  missing: ModelWeightFile[]
+  downloading: boolean
+}
+
+/** 模型下载进度事件（主进程 → 渲染进程推送） */
+export interface ModelsProgress {
+  /** downloading=正在下载某文件 / skip=已存在跳过 / done=全部完成 / error=出错中止 */
+  phase: 'downloading' | 'skip' | 'done' | 'error'
+  fileId?: string
+  fileName?: string
+  receivedBytes?: number
+  totalBytes?: number
+  error?: string
 }

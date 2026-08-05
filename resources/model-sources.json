@@ -1,0 +1,50 @@
+{
+  "version": 1,
+  "_comment": "模型下载源配置：换镜像只改这里。{hf} 会被替换为 hfEndpoint；打包后随 extraResources 放在 resources/model-sources.json",
+  "hfEndpoint": "https://hf-mirror.com",
+  "files": [
+    {
+      "id": "btc-pl",
+      "name": "BTC 和弦识别主模型",
+      "url": "https://github.com/ptnghia-j/ChordMini/raw/main/checkpoints/btc_model_best.pth",
+      "target": "acr_model/checkpoints/btc/btc_combined_best.pth",
+      "minBytes": 1048576
+    },
+    {
+      "id": "btc-sl",
+      "name": "BTC 大词表和弦模型",
+      "url": "https://github.com/ptnghia-j/ChordMini/raw/main/checkpoints/btc_model_large_voca.pt",
+      "target": "acr_model/checkpoints/SL/btc_model_large_voca.pt",
+      "minBytes": 1048576
+    },
+    {
+      "id": "songformer",
+      "name": "SongFormer 曲式分割权重",
+      "url": "{hf}/ASLP-lab/SongFormer/resolve/main/SongFormer.safetensors",
+      "target": "SongFormer/src/SongFormer/ckpts/SongFormer.safetensors",
+      "minBytes": 1048576
+    },
+    {
+      "id": "musicfm-pt",
+      "name": "MusicFM 预训练权重",
+      "url": "{hf}/minzwon/MusicFM/resolve/main/pretrained_msd.pt",
+      "target": "SongFormer/src/SongFormer/ckpts/MusicFM/pretrained_msd.pt",
+      "minBytes": 1048576
+    },
+    {
+      "id": "musicfm-stats",
+      "name": "MusicFM 统计文件",
+      "url": "{hf}/minzwon/MusicFM/resolve/main/msd_stats.json",
+      "target": "SongFormer/src/SongFormer/ckpts/MusicFM/msd_stats.json",
+      "minBytes": 1
+    }
+  ],
+  "hfRepos": [
+    {
+      "id": "muq",
+      "name": "MuQ 音频表征权重（HF 缓存布局）",
+      "repo": "OpenMuQ/MuQ-large-msd-iter",
+      "files": ["config.json", "model.safetensors"]
+    }
+  ]
+}

@@ -1,31 +1,47 @@
-# Step On Chord — electron-builder 配置（Phase 1 基础版，Phase 5 完善打包/NSIS/自动更新）
-appId: com.chordcraft.desktop
+# Step On Chord — electron-builder 配置（NSIS 安装包）
+# 构建入口：scripts/build-installer.ps1（先 npm run build 再打安装包）
+
+appId: com.donokey.steponchord
 productName: Step On Chord
-copyright: Copyright © 2026 ChordCraft
+copyright: Copyright © 2026 donokey
 
 directories:
   output: release
-  buildResources: resources
+  buildResources: build
 
+# better-sqlite3 v13 为 Node-API 模块，npm 包自带 win32-x64 预编译二进制，
+# Electron 下可直接加载，无需 node-gyp 重编译（本机无 Visual Studio）
+npmRebuild: false
+
+# 渲染进程产物 + 主进程/preload 产物；dependencies 由 electron-builder 自动收集进 asar
 files:
-  - dist/
-  - dist-electron/
-  - package.json
+  - dist/**
+  - dist-electron/**
 
-# Phase 5 启用：Python sidecar（PyInstaller onedir）与模型权重作为额外资源打包
-# extraResources:
-#   - from: resources/python-backend
-#     to: python-backend
-#   - from: resources/models
-#     to: models
+# better-sqlite3 为原生模块，.node 二进制必须在 asar 外才能加载
+asarUnpack:
+  - "**/node_modules/better-sqlite3/**"
+
+# 额外资源：只带 PyInstaller 产物（内含 engine-data 运行时代码与 model-sources.json 配置），
+# 不带 models/（权重首启下载）、ffmpeg、test-audio
+extraResources:
+  - from: resources/python-backend
+    to: python-backend
+  - from: resources/model-sources.json
+    to: model-sources.json
 
 win:
+  icon: build/icon.ico
   target:
-    - nsis
-  # icon: resources/icons/icon.ico  # Phase 5 补充应用图标
+    - target: nsis
+      arch:
+        - x64
 
 nsis:
   oneClick: false
-  allowToChangeInstallationDirectory: true
   perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
   shortcutName: Step On Chord
+  artifactName: ${name}-${version}-setup.${ext}

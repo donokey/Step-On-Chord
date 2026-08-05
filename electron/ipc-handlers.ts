@@ -1,8 +1,8 @@
 import { app, BrowserWindow, dialog, ipcMain, shell } from 'electron'
 import { writeFile } from 'node:fs/promises'
-import path from 'node:path'
 import type { HistoryStore } from './db'
 import { listAudioFilesInFolder, writeTextFiles, type BatchWriteItem } from './files'
+import type { ModelsManager } from './models'
 import type { SettingsStore } from './settings'
 import type { SidecarManager } from './sidecar'
 import type { AppSettings, NewHistoryEntry, SaveFileOptions } from './types'
@@ -18,6 +18,7 @@ export function registerIpcHandlers(
   sidecar: SidecarManager,
   history: HistoryStore,
   settings: SettingsStore,
+  models: ModelsManager,
 ): void {
   // ---- 窗口控制（frameless 自定义标题栏） ----
   ipcMain.on('window:minimize', () => getWindow()?.minimize())
@@ -86,12 +87,21 @@ export function registerIpcHandlers(
   )
   ipcMain.handle('history:clear', () => history.clear())
 
+  // ---- 模型权重（首启下载页） ----
+  ipcMain.handle('models:status', () => models.status())
+  ipcMain.handle('models:download', async () => {
+    models.setProgressSender((progress) => getWindow()?.webContents.send('models:progress', progress))
+    try {
+      await models.downloadAll()
+      return { ok: true as const }
+    } catch (err) {
+      return { ok: false as const, error: err instanceof Error ? err.message : String(err) }
+    }
+  })
+
   // ---- 设置（electron-store）与系统 Shell ----
   ipcMain.handle('settings:get', (): AppSettings => {
-    const modelsDir = app.isPackaged
-      ? path.join(process.resourcesPath, 'models')
-      : path.join(app.getAppPath(), 'resources', 'models')
-    return { refineQualities: settings.refineQualities, modelsDir }
+    return { refineQualities: settings.refineQualities, modelsDir: models.modelsDir }
   })
   ipcMain.handle('settings:set-refine', (_event, enabled: boolean) => {
     settings.setRefineQualities(Boolean(enabled))

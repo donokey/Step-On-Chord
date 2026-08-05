@@ -57,7 +57,7 @@ Electron (main) ── spawn ──> Python sidecar (FastAPI, 127.0.0.1)
 
 ## 安装须知
 
-本应用与内置的 Python 引擎（PyInstaller 产物）均**未做代码签名**，企业安全软件（Defender 企业版 / EDR 等）大概率拦截，典型表现：安装后启动无反应、`chordcraft-engine.exe` 被隔离、引擎状态一直 starting。处理方式二选一：
+本应用与内置的 Python 引擎（PyInstaller 产物）均**未做代码签名**，企业安全软件（Defender 企业版 / EDR / AppLocker 策略等）大概率拦截，典型表现：双击安装包报「管理员用策略规则限制了对…的访问」、安装后启动无反应、`chordcraft-engine.exe` 被隔离、引擎状态一直 starting。处理方式二选一：
 
 1. **允许应用**：Windows 安全中心 → 病毒和威胁防护 → 保护历史记录 → 找到被拦截的 `Step On Chord.exe` / `chordcraft-engine.exe` → 操作选「允许在设备上」；
 2. **加白名单**：把安装目录（默认 `%LOCALAPPDATA%/Programs/step-on-chord`）与 `%APPDATA%/step-on-chord`（模型/缓存目录）加入排除项。

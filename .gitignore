@@ -12,6 +12,14 @@ backend/dist/
 backend/venv/
 .venv/
 
+# PyInstaller 构建产物（build-backend.ps1 生成，不入库）
+dist-py/
+build-py/
+resources/python-backend/
+pyinstaller-build.log
+build-backend-run.log
+electron-builder-run.log
+
 # 模型权重与参考源码（不入 git）
 resources/models/
 reference/

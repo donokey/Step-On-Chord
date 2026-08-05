@@ -2,6 +2,7 @@ import { app, BrowserWindow } from 'electron'
 import path from 'node:path'
 import { HistoryStore } from './db'
 import { registerIpcHandlers } from './ipc-handlers'
+import { ModelsManager } from './models'
 import { SettingsStore } from './settings'
 import { SidecarManager } from './sidecar'
 
@@ -9,8 +10,9 @@ const isDev = !app.isPackaged
 
 let mainWindow: BrowserWindow | null = null
 const settings = new SettingsStore()
-// sidecar spawn 时从设置读取环境变量覆盖（七和弦精炼等引擎级开关）
-const sidecar = new SidecarManager(() => settings.sidecarEnv())
+const models = new ModelsManager()
+// sidecar spawn 时从设置与模型管理器读取环境变量覆盖（七和弦精炼、模型目录、HF 缓存等）
+const sidecar = new SidecarManager(() => ({ ...settings.sidecarEnv(), ...models.sidecarEnv() }))
 let history: HistoryStore | null = null
 
 function createWindow(): void {
@@ -59,9 +61,14 @@ function createWindow(): void {
 
 let isQuitting = false
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  // 打包后先把引擎运行时代码同步到用户模型目录，再起 sidecar（失败不阻塞启动）
+  await models.bootstrap().catch((err: Error) => {
+    console.error('[models] 运行时代码同步失败:', err.message)
+  })
+
   history = new HistoryStore(path.join(app.getPath('userData'), 'history.db'))
-  registerIpcHandlers(() => mainWindow, sidecar, history, settings)
+  registerIpcHandlers(() => mainWindow, sidecar, history, settings, models)
 
   // sidecar 异步启动，不阻塞窗口；状态通过事件推送到 UI
   void sidecar.start().catch((err: Error) => {

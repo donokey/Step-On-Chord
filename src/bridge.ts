@@ -40,6 +40,11 @@ const fallback: ChordcraftApi = {
     updateJson: async () => {},
     clear: async () => {},
   },
+  models: {
+    status: async () => ({ isPackaged: false, modelsDir: '', missing: [], downloading: false }),
+    download: async () => ({ ok: false, error: '非 Electron 环境（浏览器预览）' }),
+    onProgress: () => () => {},
+  },
   settings: {
     get: async () => ({ refineQualities: false, modelsDir: '' }),
     setRefine: async () => false,
