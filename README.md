@@ -28,31 +28,92 @@ Electron (main) ── spawn ──> Python sidecar (FastAPI, 127.0.0.1)
 
 算法核心派生自 [AI-ChordCraft](https://github.com/jassary08/AI-ChordCraft)（MIT），精简掉了所有 LLM 依赖，纯本地推理。
 
+## 安装 / Installation（Windows）
+
+从 [Releases](https://github.com/donokey/Step-On-Chord/releases) 下载 `step-on-chord-x.y.z-setup.exe` 运行安装（可选安装目录）。
+
+**首次启动会自动进入模型下载页**：分析模型权重（BTC / SongFormer / MuQ / MusicFM，合计约 2.7 GB）不随安装包分发，点「开始下载模型」即可（断点续传，失败可重试）；也可以手动放置，见下方[模型下载](#模型下载)。
+
+> 企业安全软件可能拦截未签名 exe，见[安装须知](#安装须知)。
+
+## 模型下载
+
+应用首启会自动检测并引导下载；下载源配置在仓库 [resources/model-sources.json](resources/model-sources.json)（换镜像只改这个文件，`{hf}` 会被替换为 `hfEndpoint`）。
+
+手动下载（网络受限时）将以下文件放到模型目录对应位置：
+
+| 文件 | 来源 | 放置位置（相对模型目录） |
+| --- | --- | --- |
+| BTC 主模型 | [ChordMini](https://github.com/ptnghia-j/ChordMini) `checkpoints/btc_model_best.pth` | `acr_model/checkpoints/btc/btc_combined_best.pth` |
+| BTC 大词表 | 同上 `btc_model_large_voca.pt` | `acr_model/checkpoints/SL/btc_model_large_voca.pt` |
+| SongFormer 权重 | [hf-mirror](https://hf-mirror.com/ASLP-lab/SongFormer) `SongFormer.safetensors` | `SongFormer/src/SongFormer/ckpts/SongFormer.safetensors` |
+| MusicFM 权重 | [hf-mirror](https://hf-mirror.com/minzwon/MusicFM) `pretrained_msd.pt` + `msd_stats.json` | `SongFormer/src/SongFormer/ckpts/MusicFM/` |
+| MuQ 权重 | [hf-mirror](https://hf-mirror.com/OpenMuQ/MuQ-large-msd-iter) `config.json` + `model.safetensors` | 见下载页「手动放置说明」的 HF 缓存布局 |
+
+模型目录：
+
+- 打包版：`%APPDATA%/step-on-chord/models`（设置页可打开）
+- 开发期：`resources/models/`
+
+## 安装须知
+
+本应用与内置的 Python 引擎（PyInstaller 产物）均**未做代码签名**，企业安全软件（Defender 企业版 / EDR 等）大概率拦截，典型表现：安装后启动无反应、`chordcraft-engine.exe` 被隔离、引擎状态一直 starting。处理方式二选一：
+
+1. **允许应用**：Windows 安全中心 → 病毒和威胁防护 → 保护历史记录 → 找到被拦截的 `Step On Chord.exe` / `chordcraft-engine.exe` → 操作选「允许在设备上」；
+2. **加白名单**：把安装目录（默认 `%LOCALAPPDATA%/Programs/step-on-chord`）与 `%APPDATA%/step-on-chord`（模型/缓存目录）加入排除项。
+
+处理后重启应用即可。个人电脑（无企业管控）一般不会遇到此问题。
+
 ## 开发环境 / Development
 
 **前置要求**：Node 18+、Python 3.12、约 8GB 可用内存。
 
 ```powershell
-# 1. Python 依赖（torch 用 CPU 版）
-py -m pip install -r backend/requirements.txt
+# 1. Python 依赖：torch 必须先装 CPU 版，避免拉 ~2.5GB 的 CUDA 包
 py -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+py -m pip install -r backend/requirements.txt
 
-# 2. ffmpeg（音频解码已用纯 Python 替代，ffmpeg 仅 B 站下载测试曲等外围用途需要）
+# 2. 模型权重 + 运行时代码（BTC / SongFormer / MuQ / MusicFM，幂等脚本）
+powershell -ExecutionPolicy Bypass -File scripts/prepare-models.ps1
 
-# 3. 模型权重（BTC + SongFormer + MuQ + MusicFM，约 2GB）
-#    clone AI-ChordCraft 并运行其 scripts/prepare_third_party.sh，
-#    然后把 third_party/ 下的 acr_model 与 SongFormer 拷到 resources/models/
-
-# 4. 前端 + 启动
+# 3. 前端 + 启动
 npm install
 npm run dev
 ```
 
 启动后拖入 wav / mp3 / flac / ogg 即可分析（一首约 1-3 分钟，CPU）。
 
+## 构建安装包 / Build
+
+两步构建（Windows，需先按上文备好开发环境与模型）：
+
+```powershell
+# 第一步：PyInstaller 打包 Python sidecar → resources/python-backend/（含引擎运行时代码 engine-data）
+powershell -ExecutionPolicy Bypass -File scripts/build-backend.ps1
+
+# 第二步：vite 构建 + electron-builder NSIS 安装包 → release/step-on-chord-0.1.0-setup.exe
+powershell -ExecutionPolicy Bypass -File scripts/build-installer.ps1
+```
+
+约定：
+
+- sidecar 双模式：dev 用 `python backend/engine_main.py`，打包后用 `resources/python-backend/chordcraft-engine.exe`（见 [electron/sidecar.ts](electron/sidecar.ts)）
+- 安装包不含模型权重（首启下载）、ffmpeg、测试音频；voicing 指法库与引擎代码随包内置
+- 下载源配置：`resources/model-sources.json`
+
 ## 评估 / Evaluation
 
 `eval/` 目录是批量准确度评估框架：`eval_batch.py` 轮换跑测试曲库，`eval_compare.py` 对照 `ground_truth.json`（公开和弦谱）输出调性准确率 / 根音 F1 报告。测试音频为版权歌曲，不入库。
+
+### 贡献测试数据 / Contributing test data
+
+准确度与分发方式无关，欢迎用你自己的曲库帮忙验证：
+
+1. 把若干首你熟悉和弦的歌（wav/mp3/flac/ogg）放本地，运行 `py eval/eval_batch.py`（不带 `--limit` 跑全量）；
+2. 在 `eval/ground_truth.json` 里按现有格式补上这些歌的调性 / 主歌根音（你越熟悉，标注越有价值）；
+3. 运行 `py eval/eval_compare.py` 生成报告，把报告 + 你新增的 GT 条目（不含音频）提 Issue 或 PR。
+
+爵士 / 摇滚 / 中文 indie 目前样本最少，这类 GT 最稀缺、帮助最大。
 
 ## 已知边界 / Known Limits
 
