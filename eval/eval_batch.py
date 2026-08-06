@@ -46,6 +46,15 @@ if limit:
 print(f"total {len(all_files)} files, testing {len(files)} (limit={limit})", flush=True)
 
 results = []
+if OUT.exists():
+    try:
+        results = json.loads(OUT.read_text(encoding="utf-8"))
+    except Exception:
+        results = []
+
+tested_files = {r["file"] for r in results}
+files = [f for f in files if f.name not in tested_files]
+
 for f in files:
     t0 = time.perf_counter()
     wav = str(AUDIO_DIR / ("_eval_" + f.stem + ".wav"))
@@ -84,6 +93,11 @@ for f in files:
         print(f"FAIL {f.name}: {exc}", flush=True)
     finally:
         Path(wav).unlink(missing_ok=True)
+        OUT.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
+        try:
+            import gc
+            gc.collect()
+        except Exception:
+            pass
 
-OUT.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
 print("ALL DONE ->", OUT, flush=True)

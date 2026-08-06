@@ -42,6 +42,16 @@ eval/eval_log.txt
 eval/tested_history.jsonl
 eval/accuracy_trend.jsonl
 eval/reports/
+eval/*.log
+eval/batch_log.txt
+eval/batch_test_log.txt
+eval/song_queue_done.txt
+
+# 真值对比数据（大包/缓存不入库；对比用的 Isophonics 标注 jams 入库）
+eval/gt_data/choco_v1.zip
+eval/gt_data/model_cache/
+eval/gt_data/probe.html
+eval/gt_data/gt_run.log
 
 # 系统文件
 .DS_Store
