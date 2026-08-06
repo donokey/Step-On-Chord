@@ -9,8 +9,13 @@
 import os
 import sys
 
-if getattr(sys, "frozen", False):
-    # PyInstaller --onedir：模型权重在 exe 同级 models/ 目录
+# 模型目录优先级：外部注入（Electron 打包版传 userData/models）> exe 同级默认值（PyInstaller
+# --onedir）> 开发期 <项目根>/resources/models。Electron 打包版必须用 userData/models，
+# 否则首启下载的权重落在 %APPDATA% 而引擎读 exe 同级目录，分析必然失败。
+_configured_model_dir = os.environ.get("CHORDCRAFT_MODEL_DIR")
+if _configured_model_dir:
+    _model_dir = _configured_model_dir
+elif getattr(sys, "frozen", False):
     _model_dir = os.path.join(os.path.dirname(sys.executable), "models")
 else:
     _model_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "resources", "models")
