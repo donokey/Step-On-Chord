@@ -17,6 +17,10 @@ else:
 
 os.environ["CHORDCRAFT_MODEL_DIR"] = os.path.abspath(_model_dir)
 
+# 模型/运行时资源默认走国内镜像（用户可自行覆盖；打包版必须内置，否则
+# transformers/huggingface_hub 会尝试直连 huggingface.co 而失败）
+os.environ.setdefault("HF_ENDPOINT", "https://hf-mirror.com")
+
 import uvicorn  # noqa: E402
 
 from chordcraft_api import app  # noqa: E402

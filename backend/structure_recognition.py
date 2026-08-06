@@ -217,6 +217,43 @@ def _songformer_runtime_cwd(songformer_root: Path) -> Path:
     return candidate if candidate.exists() else songformer_root
 
 
+def _install_gradio_stub() -> None:
+    """Replace the real ``gradio`` module with a lightweight stub before loading
+    SongFormer's ``app.py``.
+
+    ``app.py`` imports gradio at module level only to build its demo UI (the
+    ``with gr.Blocks(): ...`` section); the inference functions never touch it.
+    A real import pulls in gradio 6.x -> pandas 3.x which currently deadlocks on
+    a circular import (``AttributeError: _pandas_datetime_CAPI``), so we stub it.
+    """
+    import types
+    from unittest.mock import MagicMock
+
+    class _Blocks:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+    stub = types.ModuleType("gradio")
+    stub.Blocks = _Blocks
+    for name in (
+        "Interface", "HTML", "Row", "Column", "Audio", "Markdown", "Examples",
+        "Button", "Dataframe", "Slider", "Dropdown", "Textbox", "Label",
+        "Number", "Image", "Video", "File", "State", "Group", "Tab", "Tabs",
+        "Accordion", "Checkbox", "Radio", "Plot", "Json", "Code",
+        "HighlightedText", "Gallery", "Dataset", "UploadButton",
+        "ClearButton", "DuplicateButton", "Progress", "Request", "Timer",
+        "load", "theme", "themes", "skip", "Info", "Warning", "Error",
+    ):
+        setattr(stub, name, MagicMock())
+    sys.modules["gradio"] = stub
+
+
 def _load_local_songformer_module() -> Any:
     global _LOCAL_SONGFORMER_MODULE
     if _LOCAL_SONGFORMER_MODULE is not None:
@@ -241,10 +278,13 @@ def _load_local_songformer_module() -> Any:
         sys.modules["moss_music_songformer_runtime"] = module
         try:
             with _temporary_cwd(songformer_root):
-                _patch_gradio_textbox_compat()
+                _install_gradio_stub()
                 spec.loader.exec_module(module)
         except Exception as exc:  # noqa: BLE001
-            raise StructureRecognitionError(f"Failed to import local SongFormer runtime: {exc}") from exc
+            import traceback as _tb
+            raise StructureRecognitionError(
+                f"Failed to import local SongFormer runtime: {exc}\n{_tb.format_exc()}"
+            ) from exc
         _LOCAL_SONGFORMER_MODULE = module
         return module
 
@@ -314,7 +354,8 @@ def recognize_structure_with_songformer_local(
                     },
                 }
     except Exception as exc:  # noqa: BLE001
-        raise StructureRecognitionError(f"Local SongFormer inference failed: {exc}") from exc
+        import traceback as _tb
+        raise StructureRecognitionError(f"Local SongFormer inference failed: {exc}\n{_tb.format_exc()}") from exc
 
     raw_segments = _extract_segments(result)
     sections = normalize_songformer_segments(
