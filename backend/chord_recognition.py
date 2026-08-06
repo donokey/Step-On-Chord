@@ -505,45 +505,113 @@ def _normalize_display_tempo_bpm(tempo_value: float) -> tuple[int, str | None]:
 
 
 def _estimate_tempo_with_librosa(audio_path: str) -> dict[str, Any]:
+    """多候选自动 BPM 识别（onset 自相关 + 候选评分，DJ 软件同款思路）。
+
+    相比单一 beat_track 估计：
+    - 对 onset 强度包络做自相关，在 60~180 BPM 内找多个周期峰
+    - 每个峰做 x2/x0.5 八度展开并评分（峰强度 x 整数接近度 x 范围先验）
+    - 输出最佳值 + 候选列表 + 置信度，避免"锁定八分音符/半速"类误判
+    """
     os.environ.setdefault("NUMBA_CACHE_DIR", str(Path(tempfile.gettempdir()) / "chordcraft_numba_cache"))
     try:
         import librosa
         import numpy as np
+        from scipy.signal import find_peaks
     except Exception as exc:  # pragma: no cover - depends on optional runtime package.
         return {
             "tempo_bpm": None,
-            "source": "librosa:beat_track",
+            "source": "librosa:onset-autocorr",
             "error": str(exc),
         }
 
     try:
         y, sr = librosa.load(audio_path, sr=22050, mono=True)
-        tempo, beats = librosa.beat.beat_track(y=y, sr=sr, units="time")
-        if isinstance(tempo, np.ndarray):
-            tempo_value = float(tempo.flatten()[0]) if tempo.size else None
+        onset_env = librosa.onset.onset_strength(y=y, sr=sr)
+
+        # 自相关找周期：lag 对应 60~180 BPM（周期 0.333s ~ 1.0s）。
+        # 注意 onset_env 是帧序列，lag 用帧率（sr/hop_length）而非 sr 计算。
+        hop_length = 512  # librosa.onset.onset_strength 默认
+        frame_rate = sr / float(hop_length)
+        min_bpm, max_bpm = 60.0, 180.0
+        min_lag = int(frame_rate * 60.0 / max_bpm)
+        max_lag = int(frame_rate * 60.0 / min_bpm)
+        ac = librosa.autocorrelate(onset_env, max_size=max_lag)
+        ac[: min_lag] = 0  # 屏蔽过短周期（>180 BPM）
+
+        peaks, _ = find_peaks(ac, distance=max_lag // 8)
+        if peaks.size == 0:
+            # 无清晰周期峰：兜底用全局 tempo 估计
+            tempo = librosa.feature.tempo(onset_envelope=onset_env, sr=sr)
+            value = float(np.asarray(tempo).flatten()[0])
+            return {
+                "tempo_bpm": int(round(value)),
+                "raw_tempo_bpm": int(round(value)),
+                "normalization": None,
+                "source": "librosa:tempo-fallback",
+                "beat_count": 0,
+                "confidence": "low",
+            }
+
+        # 候选：每个峰做八度展开 + 评分
+        candidates: list[tuple[int, float]] = []  # (bpm, score)
+        for peak_idx, peak_height in zip(peaks, ac[peaks]):
+            lag = int(peak_idx)
+            if lag <= 0:
+                continue
+            # 抛物线插值：亚帧精度峰位，抵消帧分辨率带来的 ±3 BPM 量化误差
+            if 0 < peak_idx < len(ac) - 1:
+                y0, y1, y2 = float(ac[peak_idx - 1]), float(ac[peak_idx]), float(ac[peak_idx + 1])
+                denom = y0 - 2.0 * y1 + y2
+                if denom != 0.0:
+                    delta = 0.5 * (y0 - y2) / denom
+                    if -1.0 < delta < 1.0:
+                        lag = peak_idx + delta
+            bpm = 60.0 * frame_rate / lag
+            for octave in (-2, -1, 0, 1, 2):
+                cand = bpm * (2 ** octave)
+                if min_bpm <= cand <= max_bpm:
+                    # 评分：峰强度 + 整数接近度 + 常见 BPM 中心先验
+                    integer_penalty = abs(cand - round(cand)) / 60.0
+                    center_bonus = 1.0 - abs(cand - 120.0) / 120.0 * 0.5
+                    score = float(peak_height) * (1.0 - integer_penalty) * (0.8 + 0.4 * center_bonus)
+                    candidates.append((round(cand), score))
+
+        # 同 BPM 合并取最高分
+        merged: dict[int, float] = {}
+        for bpm, score in candidates:
+            merged[bpm] = max(merged.get(bpm, 0.0), score)
+        ranked = sorted(merged.items(), key=lambda kv: kv[1], reverse=True)
+        if not ranked:
+            return {
+                "tempo_bpm": None,
+                "source": "librosa:onset-autocorr",
+                "error": "no tempo candidates",
+            }
+
+        best_bpm, best_score = ranked[0]
+        second_score = ranked[1][1] if len(ranked) > 1 else 0.0
+        if best_score <= 0 or best_score < 50.0:
+            confidence = "low"
+        elif second_score / best_score < 0.7:
+            confidence = "high"
         else:
-            tempo_value = float(tempo)
+            confidence = "medium"
+        candidates_out = [{"bpm": int(b), "score": round(float(s), 4)} for b, s in ranked[:5]]
+        return {
+            "tempo_bpm": best_bpm,
+            "raw_tempo_bpm": best_bpm,
+            "normalization": "octave-normalized" if len(candidates_out) > 1 else None,
+            "source": "librosa:onset-autocorr",
+            "beat_count": 0,
+            "confidence": confidence,
+            "candidates": candidates_out,
+        }
     except Exception as exc:  # pragma: no cover - depends on optional runtime package.
         return {
             "tempo_bpm": None,
-            "source": "librosa:beat_track",
+            "source": "librosa:onset-autocorr",
             "error": str(exc),
         }
-
-    if tempo_value is None or not math.isfinite(tempo_value) or tempo_value <= 0:
-        return {
-            "tempo_bpm": None,
-            "source": "librosa:beat_track",
-            "beat_count": 0,
-        }
-    normalized_tempo, normalization = _normalize_display_tempo_bpm(tempo_value)
-    return {
-        "tempo_bpm": normalized_tempo,
-        "raw_tempo_bpm": int(round(tempo_value)),
-        "normalization": normalization,
-        "source": "librosa:beat_track",
-        "beat_count": int(len(beats)) if beats is not None else 0,
-    }
 
 
 def estimate_song_metadata(audio_path: str, chord_events: list[dict[str, Any]]) -> dict[str, Any]:
