@@ -588,20 +588,49 @@ def _estimate_tempo_with_librosa(audio_path: str) -> dict[str, Any]:
                 "error": "no tempo candidates",
             }
 
-        best_bpm, best_score = ranked[0]
-        second_score = ranked[1][1] if len(ranked) > 1 else 0.0
+        # ---- 网格跟踪校验（双保险）：周期估计定 BPM，网格跟踪验证节拍规整度 ----
+        # 对 Top 候选用 beat_track(start_bpm=候选) 跑网格跟踪；节拍间隔变异系数小
+        # = 该 BPM 下节拍规整。弱打击乐/节拍混乱时 CV 大，候选被惩罚，置信度走低。
+        grid_checked: dict[int, float] = {}
+        for bpm, score in ranked[:3]:
+            try:
+                tempo_g, beats_g = librosa.beat.beat_track(y=y, sr=sr, start_bpm=float(bpm))
+                if beats_g is not None and len(beats_g) >= 4:
+                    intervals = np.diff(np.asarray(beats_g, dtype=float))
+                    mean_iv = float(np.mean(intervals))
+                    if mean_iv > 0:
+                        cv = float(np.std(intervals) / mean_iv)
+                        stability = max(0.0, 1.0 - cv)
+                        grid_bpm = float(np.asarray(tempo_g).flatten()[0])
+                        agree = max(0.0, 1.0 - abs(grid_bpm - bpm) / float(bpm))
+                        grid_checked[bpm] = score * (0.5 + 0.5 * stability) * (0.7 + 0.3 * agree)
+                    else:
+                        grid_checked[bpm] = score * 0.3
+                else:
+                    grid_checked[bpm] = score * 0.3
+            except Exception:  # pragma: no cover - beat_track 失败按弱节奏惩罚
+                grid_checked[bpm] = score * 0.3
+
+        final_ranked = sorted(
+            ((b, grid_checked.get(b, s)) for b, s in ranked),
+            key=lambda kv: kv[1],
+            reverse=True,
+        )
+
+        best_bpm, best_score = final_ranked[0]
+        second_score = final_ranked[1][1] if len(final_ranked) > 1 else 0.0
         if best_score <= 0 or best_score < 50.0:
             confidence = "low"
         elif second_score / best_score < 0.7:
             confidence = "high"
         else:
             confidence = "medium"
-        candidates_out = [{"bpm": int(b), "score": round(float(s), 4)} for b, s in ranked[:5]]
+        candidates_out = [{"bpm": int(b), "score": round(float(s), 4)} for b, s in final_ranked[:5]]
         return {
             "tempo_bpm": best_bpm,
             "raw_tempo_bpm": best_bpm,
             "normalization": "octave-normalized" if len(candidates_out) > 1 else None,
-            "source": "librosa:onset-autocorr",
+            "source": "librosa:onset-autocorr+grid",
             "beat_count": 0,
             "confidence": confidence,
             "candidates": candidates_out,
