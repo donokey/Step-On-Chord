@@ -69,6 +69,18 @@ export function IconVoicing(props: IconProps) {
   )
 }
 
+/** 导航 - 项目：乐谱文件夹（文件夹 + 音符） */
+export function IconProjects(props: IconProps) {
+  return (
+    <svg {...iconProps(props)}>
+      <path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v6.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2v-9z" />
+      <path d="M13.4 14.9v-3.6l2.8-.8v3.6" />
+      <circle cx="12.4" cy="15" r="1.1" fill="currentColor" stroke="none" />
+      <circle cx="15.2" cy="14.2" r="1.1" fill="currentColor" stroke="none" />
+    </svg>
+  )
+}
+
 /** 导航 - 设置：八辐条齿轮 */
 export function IconSettings(props: IconProps) {
   return (
