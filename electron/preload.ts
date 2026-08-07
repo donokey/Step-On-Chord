@@ -6,6 +6,8 @@ import type {
   HistorySummary,
   ModelsProgress,
   ModelsStatus,
+  ProjectOpenResult,
+  ProjectSummary,
   NewHistoryEntry,
   SaveFileOptions,
 } from './types'
@@ -65,6 +67,23 @@ const api = {
       ipcRenderer.invoke('history:update-json', id, resultJson),
     /** 清空全部历史记录 */
     clear: (): Promise<void> => ipcRenderer.invoke('history:clear'),
+  },
+  /** 歌曲项目（v0.2.0 工作台） */
+  projects: {
+    list: (): Promise<ProjectSummary[]> => ipcRenderer.invoke('projects:list'),
+    create: (parentDir: string, name: string): Promise<{ folderPath: string; project: object }> =>
+      ipcRenderer.invoke('projects:create', parentDir, name),
+    open: (folderPath: string): Promise<ProjectOpenResult> => ipcRenderer.invoke('projects:open', folderPath),
+    save: (folderPath: string, project: object): Promise<void> => ipcRenderer.invoke('projects:save', folderPath, project),
+    remove: (folderPath: string): Promise<void> => ipcRenderer.invoke('projects:delete', folderPath),
+    locateAudio: (folderPath: string): Promise<object | null> => ipcRenderer.invoke('projects:locate-audio', folderPath),
+    copyAudio: (folderPath: string, sourcePath: string): Promise<object> =>
+      ipcRenderer.invoke('projects:copy-audio', folderPath, sourcePath),
+    addAttachment: (folderPath: string, sourcePath: string, kind: string, note: string): Promise<object> =>
+      ipcRenderer.invoke('projects:add-attachment', folderPath, sourcePath, kind, note),
+    removeAttachment: (folderPath: string, attachmentId: string): Promise<object> =>
+      ipcRenderer.invoke('projects:remove-attachment', folderPath, attachmentId),
+    chooseParentDir: (): Promise<string | null> => ipcRenderer.invoke('projects:choose-parent-dir'),
   },
   /** 模型权重（首启下载页）：状态检测 / 一键下载 / 进度推送 */
   models: {

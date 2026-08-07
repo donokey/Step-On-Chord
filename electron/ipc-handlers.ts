@@ -3,6 +3,7 @@ import { writeFile } from 'node:fs/promises'
 import type { HistoryStore } from './db'
 import { listAudioFilesInFolder, writeTextFiles, type BatchWriteItem } from './files'
 import type { ModelsManager } from './models'
+import type { ProjectsService } from './projects'
 import type { SettingsStore } from './settings'
 import type { SidecarManager } from './sidecar'
 import type { AppSettings, NewHistoryEntry, SaveFileOptions } from './types'
@@ -19,6 +20,7 @@ export function registerIpcHandlers(
   history: HistoryStore,
   settings: SettingsStore,
   models: ModelsManager,
+  projects: ProjectsService,
 ): void {
   // ---- 窗口控制（frameless 自定义标题栏） ----
   ipcMain.on('window:minimize', () => getWindow()?.minimize())
@@ -97,6 +99,53 @@ export function registerIpcHandlers(
     } catch (err) {
       return { ok: false as const, error: err instanceof Error ? err.message : String(err) }
     }
+  })
+
+  // ---- 歌曲项目（v0.2.0 工作台） ----
+  ipcMain.handle('projects:list', () => projects.list())
+  ipcMain.handle('projects:create', (_event, parentDir: string, name: string) => projects.create(parentDir, name))
+  ipcMain.handle('projects:open', (_event, folderPath: string) => projects.open(folderPath))
+  ipcMain.handle('projects:save', (_event, folderPath: string, project: object) => {
+    // 渲染进程传完整对象，主进程做模型校验后再写盘（防脏数据）
+    return projects.save(folderPath, project as Parameters<ProjectsService['save']>[1])
+  })
+  ipcMain.handle('projects:delete', (_event, folderPath: string) => projects.remove(folderPath))
+  ipcMain.handle('projects:locate-audio', async (_event, folderPath: string) => {
+    const win = getWindow()
+    if (!win) return null
+    const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+      title: '重新定位歌曲音频',
+      properties: ['openFile'],
+      filters: AUDIO_FILE_FILTERS,
+    })
+    if (canceled || !filePaths[0]) return null
+    const current = await projects.open(folderPath)
+    if (!current.project.audio) return null
+    return projects.setAudio(folderPath, current.project, {
+      mode: current.project.audio.mode,
+      path: filePaths[0],
+      file_name: filePaths[0].split(/[\\/]/).pop() ?? filePaths[0],
+    })
+  })
+  ipcMain.handle('projects:copy-audio', (_event, folderPath: string, sourcePath: string) => {
+    return projects.open(folderPath).then(({ project }) => projects.copyAudioIntoProject(folderPath, project, sourcePath))
+  })
+  ipcMain.handle('projects:add-attachment', (_event, folderPath: string, sourcePath: string, kind: string, note: string) => {
+    return projects.open(folderPath).then(({ project }) =>
+      projects.addAttachment(folderPath, project, sourcePath, kind as 'accompaniment' | 'arrangement' | 'demo' | 'other', note),
+    )
+  })
+  ipcMain.handle('projects:remove-attachment', (_event, folderPath: string, attachmentId: string) => {
+    return projects.open(folderPath).then(({ project }) => projects.removeAttachment(folderPath, project, attachmentId))
+  })
+  ipcMain.handle('projects:choose-parent-dir', async () => {
+    const win = getWindow()
+    if (!win) return null
+    const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+      title: '选择歌曲项目存放位置',
+      properties: ['openDirectory', 'createDirectory'],
+    })
+    return canceled ? null : filePaths[0]
   })
 
   // ---- 设置（electron-store）与系统 Shell ----

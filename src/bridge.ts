@@ -40,6 +40,18 @@ const fallback: ChordcraftApi = {
     updateJson: async () => {},
     clear: async () => {},
   },
+  projects: {
+    list: async () => [],
+    create: async () => ({ folderPath: '', project: {} }),
+    open: async () => ({ folderPath: '', project: {}, audioMissing: false }),
+    save: async () => {},
+    remove: async () => {},
+    locateAudio: async () => null,
+    copyAudio: async () => ({}),
+    addAttachment: async () => ({}),
+    removeAttachment: async () => ({}),
+    chooseParentDir: async () => null,
+  },
   models: {
     status: async () => ({ isPackaged: false, modelsDir: '', missing: [], downloading: false }),
     download: async () => ({ ok: false, error: '非 Electron 环境（浏览器预览）' }),

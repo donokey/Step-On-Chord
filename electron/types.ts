@@ -81,3 +81,18 @@ export interface ModelsProgress {
   totalBytes?: number
   error?: string
 }
+
+/** 歌曲项目列表项（索引表，不含完整内容） */
+export interface ProjectSummary {
+  id: number
+  name: string
+  folderPath: string
+  updatedAt: number
+}
+
+/** 打开项目的结果（project 已由主进程校验） */
+export interface ProjectOpenResult {
+  folderPath: string
+  project: object
+  audioMissing: boolean
+}

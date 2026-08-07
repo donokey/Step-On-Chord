@@ -1,8 +1,9 @@
 import { app, BrowserWindow } from 'electron'
 import path from 'node:path'
-import { HistoryStore } from './db'
+import { HistoryStore, ProjectIndexStore } from './db'
 import { registerIpcHandlers } from './ipc-handlers'
 import { ModelsManager } from './models'
+import { ProjectsService } from './projects'
 import { SettingsStore } from './settings'
 import { SidecarManager } from './sidecar'
 
@@ -14,6 +15,8 @@ const models = new ModelsManager()
 // sidecar spawn 时从设置与模型管理器读取环境变量覆盖（七和弦精炼、模型目录、HF 缓存等）
 const sidecar = new SidecarManager(() => ({ ...settings.sidecarEnv(), ...models.sidecarEnv() }))
 let history: HistoryStore | null = null
+let projectIndex: ProjectIndexStore | null = null
+let projects: ProjectsService | null = null
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -68,7 +71,9 @@ app.whenReady().then(async () => {
   })
 
   history = new HistoryStore(path.join(app.getPath('userData'), 'history.db'))
-  registerIpcHandlers(() => mainWindow, sidecar, history, settings, models)
+  projectIndex = new ProjectIndexStore(path.join(app.getPath('userData'), 'history.db'))
+  projects = new ProjectsService(projectIndex)
+  registerIpcHandlers(() => mainWindow, sidecar, history, settings, models, projects)
 
   // sidecar 异步启动，不阻塞窗口；状态通过事件推送到 UI
   void sidecar.start().catch((err: Error) => {
@@ -88,6 +93,7 @@ app.on('before-quit', (event) => {
   isQuitting = true
   event.preventDefault()
   history?.close()
+  projectIndex?.close()
   void sidecar.stop().finally(() => app.quit())
 })
 

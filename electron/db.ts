@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3'
-import type { HistoryRecord, HistorySummary, NewHistoryEntry } from './types'
+import type { HistoryRecord, HistorySummary, NewHistoryEntry, ProjectSummary } from './types'
 
 /** 历史记录条数上限（超出后最旧的被淘汰） */
 const MAX_ENTRIES = 500
@@ -83,6 +83,49 @@ export class HistoryStore {
   /** 清空全部历史记录（设置页「清空分析历史」） */
   clear(): void {
     this.db.prepare(`DELETE FROM analyses`).run()
+  }
+
+  close(): void {
+    this.db.close()
+  }
+}
+
+
+/** 歌曲项目索引（与 analyses 同库；项目文件夹才是数据源，索引仅作最近列表） */
+export class ProjectIndexStore {
+  private db: Database.Database
+
+  constructor(dbPath: string) {
+    this.db = new Database(dbPath)
+    this.db.pragma('journal_mode = WAL')
+    this.db.exec(`
+      CREATE TABLE IF NOT EXISTS projects (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        folder_path TEXT NOT NULL UNIQUE,
+        updated_at INTEGER NOT NULL
+      )
+    `)
+  }
+
+  upsert(name: string, folderPath: string, updatedAt: number): void {
+    this.db
+      .prepare(
+        `INSERT INTO projects (name, folder_path, updated_at) VALUES (?, ?, ?)
+         ON CONFLICT(folder_path) DO UPDATE SET name = excluded.name, updated_at = excluded.updated_at`,
+      )
+      .run(name, folderPath, updatedAt)
+  }
+
+  list(): ProjectSummary[] {
+    const rows = this.db
+      .prepare(`SELECT id, name, folder_path, updated_at FROM projects ORDER BY updated_at DESC, id DESC`)
+      .all() as { id: number; name: string; folder_path: string; updated_at: number }[]
+    return rows.map((row) => ({ id: row.id, name: row.name, folderPath: row.folder_path, updatedAt: row.updated_at }))
+  }
+
+  remove(folderPath: string): void {
+    this.db.prepare(`DELETE FROM projects WHERE folder_path = ?`).run(folderPath)
   }
 
   close(): void {
