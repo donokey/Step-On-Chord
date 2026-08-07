@@ -5,14 +5,17 @@ import { TitleBar } from './components/TitleBar'
 import { AnalyzeView } from './components/views/AnalyzeView'
 import { HistoryView } from './components/views/HistoryView'
 import { ModelsSetupView } from './components/views/ModelsSetupView'
+import { ProjectDetailView } from './components/views/ProjectDetailView'
 import { ProjectsView } from './components/views/ProjectsView'
 import { SettingsView } from './components/views/SettingsView'
 import { VoicingView } from './components/views/VoicingView'
 import { bridge } from './bridge'
+import { useProjectStore } from './stores/projectStore'
 import { useUiStore } from './stores/uiStore'
 
 export default function App() {
   const activeView = useUiStore((s) => s.activeView)
+  const currentProject = useProjectStore((s) => s.current)
   // 打包版权重缺失时先展示模型下载页（用户可跳过，下次启动重新检测）
   const [showModelsSetup, setShowModelsSetup] = useState(false)
 
@@ -41,7 +44,7 @@ export default function App() {
         <SideNav />
         <main className="min-w-0 flex-1 overflow-y-auto bg-base">
           {activeView === 'analyze' && <AnalyzeView />}
-          {activeView === 'projects' && <ProjectsView />}
+          {activeView === 'projects' && (currentProject ? <ProjectDetailView /> : <ProjectsView />)}
           {activeView === 'history' && <HistoryView />}
           {activeView === 'voicing' && <VoicingView />}
           {activeView === 'settings' && <SettingsView />}
