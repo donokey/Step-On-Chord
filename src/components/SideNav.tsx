@@ -1,9 +1,10 @@
 import type { ComponentType } from 'react'
 import { useUiStore, type NavView } from '../stores/uiStore'
-import { IconAnalyze, IconHistory, IconSettings, IconVoicing, type IconProps } from './icons'
+import { IconAnalyze, IconHistory, IconProjects, IconSettings, IconVoicing, type IconProps } from './icons'
 
 const NAV_ITEMS: { key: NavView; label: string; icon: ComponentType<IconProps> }[] = [
   { key: 'analyze', label: '分析', icon: IconAnalyze },
+  { key: 'projects', label: '项目', icon: IconProjects },
   { key: 'history', label: '历史', icon: IconHistory },
   { key: 'voicing', label: 'Voicing', icon: IconVoicing },
   { key: 'settings', label: '设置', icon: IconSettings },

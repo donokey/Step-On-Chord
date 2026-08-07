@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 
 /** 左侧导航的四个入口 */
-export type NavView = 'analyze' | 'history' | 'voicing' | 'settings'
+export type NavView = 'analyze' | 'projects' | 'history' | 'voicing' | 'settings'
 
 interface UiState {
   activeView: NavView

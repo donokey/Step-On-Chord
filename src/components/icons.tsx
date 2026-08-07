@@ -41,6 +41,16 @@ export function IconAnalyze(props: IconProps) {
   )
 }
 
+/** 导航 - 项目：文件夹（乐手工作台歌曲项目） */
+export function IconProjects(props: IconProps) {
+  return (
+    <svg {...iconProps(props)}>
+      <path d="M3.5 6.5a2 2 0 0 1 2-2h4l2 2.5h7a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z" />
+      <path d="M3.5 10.5h17" />
+    </svg>
+  )
+}
+
 /** 导航 - 历史：逆时针回转时钟 */
 export function IconHistory(props: IconProps) {
   return (
