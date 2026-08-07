@@ -1,7 +1,7 @@
 # Step On Chord 工程化补强计划 v1.0
 
-- **日期**: 2026-08-06
-- **状态**: 待用户确认（确认前不动任何代码）
+- **日期**: 2026-08-06（2026-08-07 更新）
+- **状态**: Phase 0 已完成；Phase 1-6 待执行（新电脑）
 - **执行方式**: 代码改动交 Qoder 执行，用户负责决策与验收；每个 Phase 完成后汇报，确认后再进入下一个
 - **适用环境**: 后续所有开发在用户的另一台电脑上完成。Phase 0 在公司电脑执行（纯 git 操作，无重负载），其余全部在新电脑执行
 
@@ -17,7 +17,13 @@
 | 分发 | v0.1.0：457MB 全量、未签名、无更新通道 | electron-updater 未接；签名决策无量化触发条件；无 CHANGELOG |
 | eval 闭环 | 每日 cron 已于 2026-08-06 取消（公司电脑负载不动） | 换机后需重建，docs/run-eval-on-new-machine.md 已写好流程 |
 
-**最急迫的事实**：`docs/run-eval-on-new-machine.md` 的换机流程依赖 `gt_compare.py`、`eval/gt_data/`（jams 标注）、`GT_PROGRESS.md`，但三者目前都不在 git 里。新电脑 `git clone` 之后，这份换机指南会在第 5、7 步直接失效。**Phase 0 就是解决这件事。**
+**最急迫的事实**：`docs/run-eval-on-new-machine.md` 的换机流程依赖 `gt_compare.py`、`eval/gt_data/`（jams 标注）、`GT_PROGRESS.md`，但三者目前都不在 git 里。新电脑 `git clone` 之后，这份换机指南会在第 5、7 步直接失效。**Phase 0 就是解决这件事。** ✅ 已于 2026-08-07 解决，见 Phase 0 执行记录。
+
+**2026-08-07 进展更新**：
+
+- 新电脑基于旧基点推送了 4 个提交：两个打包修复（让打包后的引擎真正可运行、引擎正确识别注入的 `CHORDCRAFT_MODEL_DIR`）+ 两个 BPM 增强（onset 自相关的多候选自动 BPM 检测、网格追踪验证双通道）。
+- 本地 Phase 0 提交与这 4 个远端提交形成分叉，经 rebase 合并（零冲突：远端只动 `backend/*` 与打包配置，本地只动 `docs/` 与 `eval/`），已推送 GitHub，main = `f642039`。
+- **新发现的发布问题**：v0.1.0 tag 指向 `1f5d693`（不含两个打包修复的旧提交），在架 Release 里的 457MB 安装包是旧代码构建的，带"装完引擎跑不起来"的问题。新安装包须升版本 0.1.1、打新 tag、发新 Release，见下文"即刻行动"节。
 
 ## 二、总原则
 
@@ -27,11 +33,25 @@
 4. 简单直接，拒绝过度工程：CI 只跑单元测试和类型检查，不做重推理；不引入新的重型框架。
 5. 下一次国内摇滚测试（草东/万青等）在回家后进行，不提前跑。
 
+## 即刻行动：新电脑上的下一次发布（先于 Phase 1）
+
+新安装包已在新电脑构建完成（含两个打包修复 + BPM 增强），尚未上传。正确发布方式：
+
+1. `git pull` —— 拉取 Phase 0 的全部评估资产与本计划文档。
+2. `package.json` 版本号 0.1.0 → **0.1.1**（electron-builder 从这里读版本）。
+3. 构建安装包，打 **v0.1.1** tag，创建新的 v0.1.1 Release 上传。
+4. 在 v0.1.0 的 Release 说明中补一句："此版本存在已知问题（安装后引擎可能无法运行），请使用 v0.1.1。"
+5. **不要**把新安装包挂到 v0.1.0 Release——该 tag 指向不含打包修复的旧代码，挂新包会让 tag 与实际构建代码不一致。
+
+这一步同时是 Task 5.2 发布规范的首次实践：CHANGELOG.md 在本次一并建立，首条记录 v0.1.1 = 打包修复 + BPM 检测增强。
+
 ## 三、任务列表
 
-### Phase 0：迁移前保全（公司电脑，约 30 分钟）
+### Phase 0：迁移前保全（公司电脑，约 30 分钟）✅ 2026-08-07 完成
 
 > 目标：让 GitHub 仓库成为完整的迁移载体。纯 git 操作，无构建、无推理。
+
+**执行记录（2026-08-07）**：新电脑先推了 4 个新提交导致分叉，确认两侧改动零重叠后 rebase 合并，零冲突，推送成功（main = `f642039`），`git ls-tree origin/main` 逐项验证资产已入库。偏差说明：`eval/song_queue_done.txt` 改为写入 .gitignore 而非入库（属运行状态记录文件，不影响换机流程）。
 
 #### Task 0.1 补全 .gitignore
 
@@ -40,7 +60,7 @@
 **改动**: `.gitignore` 追加 `eval/batch_run_*.log`、`eval/batch_log.txt`、`eval/batch_test_log.txt`。
 
 **验收标准**:
-- [ ] `git status` 中不再出现任何 batch_*.log
+- [x] `git status` 中不再出现任何 batch_*.log
 
 **规模**: XS（1 文件）
 
@@ -56,8 +76,8 @@
 - `docs/engineering-hardening-plan.md`（本文件）
 
 **验收标准**:
-- [ ] 上述文件全部出现在新 commit 中
-- [ ] `git status` 只剩预期内的未跟踪项（模型、音频、构建产物等已忽略项）
+- [x] 上述文件全部出现在新 commit 中
+- [x] `git status` 只剩预期内的未跟踪项（模型、音频、构建产物等已忽略项）
 
 **规模**: S
 
@@ -66,8 +86,8 @@
 **描述**: push 到 origin，在 GitHub 网页端验证。
 
 **验证**:
-- [ ] `git push origin` 成功
-- [ ] 浏览器打开 github.com/donokey/Step-On-Chord，确认新 commit 和 `eval/gt_compare.py` 可见
+- [x] `git push origin` 成功
+- [x] github.com/donokey/Step-On-Chord 可见新提交，`eval/gt_compare.py` 等资产在库
 
 **规模**: XS
 
@@ -87,9 +107,9 @@
 **规模**: S
 
 #### Checkpoint 0（汇报点）
-- [ ] GitHub 仓库包含全部 eval 资产
-- [ ] 迁移清单确认
-- [ ] 用户确认后，本计划后续阶段全部在新电脑执行
+- [x] GitHub 仓库包含全部 eval 资产
+- [ ] 迁移清单确认（test-audio 35 首的迁移方式待用户执行时敲定）
+- [x] 后续阶段全部在新电脑执行
 
 ---
 
@@ -331,12 +351,12 @@
 4. **代码签名触发阈值**（Task 5.2）：下载数达到多少启动 Trusted Signing 评估。
 5. **是否启用分支保护**（Task 4.2）：个人仓库可选。
 
-## 六、附录：资产现状清单（2026-08-06 盘点）
+## 六、附录：资产现状清单（2026-08-07 更新）
 
 | 类别 | 内容 | 状态 |
 |---|---|---|
-| 已入库 | backend/、eval 脚本（eval_batch/eval_compare/ground_truth.json/song_queue.txt）、docs、electron/、src/ | 正常 |
-| 未入库（Phase 0 处理） | eval/gt_compare.py、eval/gt_data/、eval/GT_PROGRESS.md、eval/song_queue_done.txt | **换机指南依赖，最急** |
-| 未入库（忽略处理） | eval/batch_*.log 等 9 个运行日志 | 加 .gitignore |
+| 已入库 | backend/、eval 脚本、docs（含换机指南与本计划）、electron/、src/ | 正常 |
+| 已入库（2026-08-07，f642039） | eval/gt_compare.py、eval/gt_data/（jams）、eval/GT_PROGRESS.md | ✅ 换机指南依赖已满足 |
+| 已忽略 | eval/batch_*.log 等运行日志、eval/song_queue_done.txt | 已写入 .gitignore |
 | 永久不入库（版权/体积） | test-audio/、resources/models/、reference/、eval/reports/、模型缓存 | 手动迁移或自动下载 |
 | 仓库外 | history.db（AppData） | 用户决定是否迁移 |
