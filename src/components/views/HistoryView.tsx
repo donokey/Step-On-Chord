@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import type { HistorySummary } from '../../../electron/types'
 import { bridge } from '../../bridge'
 import { useAnalysisStore } from '../../stores/analysisStore'
+import { saveAnalysisAsProject } from '../../utils/saveAsProject'
 import { useUiStore } from '../../stores/uiStore'
 import type { AnalysisResult } from '../../types/analysis'
 import { PanelTitle } from '../PanelTitle'
@@ -45,6 +46,17 @@ export function HistoryView() {
     },
     [loadResult, setActiveView],
   )
+
+  const convertToProject = useCallback(async (id: number) => {
+    try {
+      const record = await bridge.history.get(id)
+      if (!record) return
+      const result = JSON.parse(record.result_json) as AnalysisResult
+      await saveAnalysisAsProject(record.file_name, record.file_path, result)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    }
+  }, [])
 
   const removeEntry = useCallback(async (id: number) => {
     await bridge.history.remove(id)
@@ -91,6 +103,17 @@ export function HistoryView() {
                     </p>
                   </div>
                   <span className="shrink-0 font-vt text-xs text-ink-faint group-hover:text-ink-dim">载入 →</span>
+                  <button
+                    type="button"
+                    title="转存为歌曲项目"
+                    onClick={(event) => {
+                      event.stopPropagation()
+                      void convertToProject(entry.id)
+                    }}
+                    className="btn-pixel h-6 w-6 shrink-0 justify-center px-0 text-xs"
+                  >
+                    ▣
+                  </button>
                   <button
                     type="button"
                     title="删除这条记录"

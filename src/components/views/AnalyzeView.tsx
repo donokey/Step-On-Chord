@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { bridge } from '../../bridge'
 import { useAnalysisStore } from '../../stores/analysisStore'
+import { saveAnalysisAsProject } from '../../utils/saveAsProject'
 import { useBatchStore } from '../../stores/batchStore'
 import { usePlayerStore } from '../../stores/playerStore'
 import { AnalysisPanel } from '../AnalysisPanel'
@@ -182,6 +183,37 @@ function ElapsedSeconds({ startedAt }: { startedAt: number }) {
 }
 
 /** 分析完成：正式工作区布局（波形 / 和弦轴 / 段落条 / 详情 + 小巫师） */
+function SaveAsProjectButton() {
+  const result = useAnalysisStore((s) => s.result)
+  const fileName = useAnalysisStore((s) => s.fileName)
+  const filePath = useAnalysisStore((s) => s.filePath)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const save = useCallback(async () => {
+    if (!result || !fileName || !filePath || busy) return
+    setBusy(true)
+    setError(null)
+    try {
+      const ok = await saveAnalysisAsProject(fileName, filePath, result)
+      if (!ok) setError('已取消')
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setBusy(false)
+    }
+  }, [result, fileName, filePath, busy])
+
+  return (
+    <div className="flex flex-col gap-1">
+      <button type="button" onClick={() => void save()} disabled={busy} className="btn-pixel text-xs">
+        {busy ? '保存中…' : '存为项目'}
+      </button>
+      {error && <p className="max-w-28 font-vt text-[10px] leading-tight text-error">{error}</p>}
+    </div>
+  )
+}
+
 function DoneState({ onReset }: { onReset: () => void }) {
   const isPlaying = usePlayerStore((s) => s.isPlaying)
   const [justFinished, setJustFinished] = useState(true)
@@ -210,9 +242,12 @@ function DoneState({ onReset }: { onReset: () => void }) {
           <p className="px-1 text-center font-vt text-xs leading-snug text-ink-faint">
             {isPlaying ? '聆听中…' : justFinished ? '解读完成！' : '在书房待命'}
           </p>
-          <button type="button" onClick={onReset} className="btn-pixel text-xs">
-            分析下一首
-          </button>
+          <div className="flex flex-col gap-1">
+            <SaveAsProjectButton />
+            <button type="button" onClick={onReset} className="btn-pixel text-xs">
+              分析下一首
+            </button>
+          </div>
         </aside>
       </div>
     </>
