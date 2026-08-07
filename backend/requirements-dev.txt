@@ -1,0 +1,2 @@
+# 开发/测试依赖（与运行时 requirements.txt 分离）
+pytest>=8.0
