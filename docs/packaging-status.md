@@ -1,6 +1,6 @@
 # v0.1.0 打包状态与遗留问题 / Packaging Status & Known Issues
 
-> 更新日期：2026-08-05（Phase 5 收尾）
+> 更新日期：2026-08-08（v0.2.0-beta.1 主线，新增版本号规范）
 > 本文档记录 Windows 安装包的构建状态、已验证项、阻塞项与重建注意事项，方便在其他机器上接续工作。
 
 ## 一、当前状态总览
@@ -46,7 +46,20 @@
    - 临时补丁 `node_modules/app-builder-lib/out/targets/nsis/NsisTarget.js` 中 `computeScriptAndSignUninstaller` 的 Windows 分支，把 `wineVm.exec(installerPath, ...)` 替换为 `await nsisUtil_1.UninstallerReader.exec(installerPath, uninstallerPath)`（纯 Node 解析提取 uninstaller，不执行任何 exe）。注意 `npm install` 会冲掉此补丁。
 3. 两步构建入口不变：`scripts/build-backend.ps1` → `scripts/build-installer.ps1`。
 
-## 五、下一步
+## 五、版本号规范与发版流程（v0.2.0 起强制）
+
+**规范**：发布 tag = `v` + package.json version，二者严格一致；不再出现“tag 是 v0.1.1 但安装包名 0.1.0”的情况。
+
+**发版流程**（按序执行）：
+
+1. `npm version <minor|patch|prerelease>` 改版本（同步 package.json 与 package-lock.json）；
+2. 构建：`powershell -ExecutionPolicy Bypass -File scripts\build-backend.ps1`（如后端有改动）→ `powershell -ExecutionPolicy Bypass -File scripts\build-installer.ps1`（electron-builder 读 version 命名产物）；
+3. `git tag v<version>` + `git push --tags`；
+4. `gh release create v<version> <安装包与 blockmap 路径>`（公开仓库无需 GH_TOKEN，设置亦无妨）。
+
+**当前版本**：package.json = `0.2.0-beta.1`（自动更新 + 工作台项目系统），下次发版 tag 为 `v0.2.0-beta.1`。
+
+## 六、下一步
 
 1. 在干净机器完成第三节验证清单；
 2. 验证通过后把 `release/step-on-chord-0.1.0-setup.exe` 发布为 GitHub Release（README 安装节已链接 Releases 页）；

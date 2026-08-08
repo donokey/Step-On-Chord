@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { SideNav } from './components/SideNav'
 import { StatusBar } from './components/StatusBar'
 import { TitleBar } from './components/TitleBar'
+import { UpdatePrompt } from './components/UpdatePrompt'
 import { AnalyzeView } from './components/views/AnalyzeView'
 import { HistoryView } from './components/views/HistoryView'
 import { ModelsSetupView } from './components/views/ModelsSetupView'
@@ -51,6 +52,7 @@ export default function App() {
         </main>
       </div>
       <StatusBar />
+      <UpdatePrompt />
     </div>
   )
 }

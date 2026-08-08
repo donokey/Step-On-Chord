@@ -7,6 +7,7 @@ import type { ProjectsService } from './projects'
 import type { SettingsStore } from './settings'
 import type { SidecarManager } from './sidecar'
 import type { AppSettings, NewHistoryEntry, SaveFileOptions } from './types'
+import type { UpdaterManager } from './updater'
 
 const AUDIO_FILE_FILTERS = [
   { name: '音频文件', extensions: ['mp3', 'wav', 'flac'] },
@@ -21,6 +22,7 @@ export function registerIpcHandlers(
   settings: SettingsStore,
   models: ModelsManager,
   projects: ProjectsService,
+  updater: UpdaterManager,
 ): void {
   // ---- 窗口控制（frameless 自定义标题栏） ----
   ipcMain.on('window:minimize', () => getWindow()?.minimize())
@@ -78,6 +80,10 @@ export function registerIpcHandlers(
   // ---- 应用信息 / sidecar 状态 ----
   ipcMain.handle('app:get-version', () => app.getVersion())
   ipcMain.handle('sidecar:get-info', () => sidecar.getInfo())
+
+  // ---- 应用更新（electron-updater，仅打包版生效） ----
+  ipcMain.handle('updater:check', () => updater.check())
+  ipcMain.handle('updater:install', () => updater.install())
 
   // ---- 分析历史（SQLite） ----
   ipcMain.handle('history:list', () => history.list())

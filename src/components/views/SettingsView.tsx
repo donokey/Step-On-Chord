@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import type { SidecarInfo } from '../../../electron/types'
 import { bridge } from '../../bridge'
 import { resolveEngineBaseUrl } from '../../stores/analysisStore'
+import { CHECK_UPDATE_EVENT } from '../UpdatePrompt'
 import { PanelTitle } from '../PanelTitle'
 
 const GITHUB_REPO = 'https://github.com/donokey/Step-On-Chord'
@@ -66,6 +67,11 @@ export function SettingsView() {
     await bridge.history.clear()
     setConfirmClear(false)
     setCleared(true)
+  }, [])
+
+  const handleCheckUpdate = useCallback(() => {
+    // UpdatePrompt 常驻监听该事件：重置「稍后」忽略标记并触发主进程检查（仅打包版生效）
+    window.dispatchEvent(new Event(CHECK_UPDATE_EVENT))
   }, [])
 
   const engineReady = sidecarInfo?.status === 'ready'
@@ -197,8 +203,11 @@ export function SettingsView() {
           </span>
         </div>
         <div className="space-y-0.5 font-vt text-sm text-ink-dim">
-          <p>
+          <p className="flex items-center gap-2">
             Step On Chord <span className="text-ink-faint">v{version || '…'}</span>
+            <button type="button" onClick={handleCheckUpdate} className="btn-pixel px-2 py-0.5 text-xs">
+              检查更新
+            </button>
           </p>
           <p>
             <button

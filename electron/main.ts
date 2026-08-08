@@ -6,6 +6,7 @@ import { ModelsManager } from './models'
 import { ProjectsService } from './projects'
 import { SettingsStore } from './settings'
 import { SidecarManager } from './sidecar'
+import { UpdaterManager } from './updater'
 
 const isDev = !app.isPackaged
 
@@ -14,6 +15,8 @@ const settings = new SettingsStore()
 const models = new ModelsManager()
 // sidecar spawn 时从设置与模型管理器读取环境变量覆盖（七和弦精炼、模型目录、HF 缓存等）
 const sidecar = new SidecarManager(() => ({ ...settings.sidecarEnv(), ...models.sidecarEnv() }))
+// 应用内更新（仅打包版生效，isPackaged 门控在 UpdaterManager 内部）
+const updater = new UpdaterManager(() => mainWindow)
 let history: HistoryStore | null = null
 let projectIndex: ProjectIndexStore | null = null
 let projects: ProjectsService | null = null
@@ -73,12 +76,15 @@ app.whenReady().then(async () => {
   history = new HistoryStore(path.join(app.getPath('userData'), 'history.db'))
   projectIndex = new ProjectIndexStore(path.join(app.getPath('userData'), 'history.db'))
   projects = new ProjectsService(projectIndex)
-  registerIpcHandlers(() => mainWindow, sidecar, history, settings, models, projects)
+  registerIpcHandlers(() => mainWindow, sidecar, history, settings, models, projects, updater)
 
   // sidecar 异步启动，不阻塞窗口；状态通过事件推送到 UI
   void sidecar.start().catch((err: Error) => {
     console.error('[sidecar] 首次启动失败:', err.message)
   })
+
+  // 应用内更新：启动 10 秒后静默检查（仅打包版；开发模式直接跳过）
+  updater.start()
 
   createWindow()
 

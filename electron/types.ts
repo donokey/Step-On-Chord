@@ -96,3 +96,12 @@ export interface ProjectOpenResult {
   project: object
   audioMissing: boolean
 }
+
+/** 应用更新状态（主进程 → 渲染进程推送） */
+export type UpdateStatus =
+  | { status: 'checking' }
+  | { status: 'available'; version: string; releaseNotes: string }
+  | { status: 'not-available' }
+  | { status: 'downloading'; percent: number; transferred: number; total: number }
+  | { status: 'downloaded'; version: string }
+  | { status: 'error'; message: string }

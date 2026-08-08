@@ -10,6 +10,7 @@ import type {
   ProjectSummary,
   NewHistoryEntry,
   SaveFileOptions,
+  UpdateStatus,
 } from './types'
 
 /** 订阅主进程推送事件，返回取消订阅函数 */
@@ -96,6 +97,12 @@ const api = {
     get: (): Promise<AppSettings> => ipcRenderer.invoke('settings:get'),
     /** 七和弦自动精炼开关（写盘后需重启引擎生效） */
     setRefine: (enabled: boolean): Promise<boolean> => ipcRenderer.invoke('settings:set-refine', enabled),
+  },
+  /** 应用更新（electron-updater，仅打包版生效；dev/浏览器下为 fallback） */
+  updater: {
+    check: (): Promise<void> => ipcRenderer.invoke('updater:check'),
+    install: (): Promise<void> => ipcRenderer.invoke('updater:install'),
+    onStatus: subscribe<UpdateStatus>('updater:status'),
   },
   /** 系统 Shell（打开文件夹 / 外部链接） */
   shell: {

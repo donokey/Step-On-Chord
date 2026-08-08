@@ -45,3 +45,10 @@ nsis:
   createStartMenuShortcut: true
   shortcutName: Step On Chord
   artifactName: ${name}-${version}-setup.${ext}
+
+# 应用内自动更新（electron-updater）：以 GitHub Releases 为更新源，
+# electron-builder 构建时自动生成 latest.yml + blockmap（差分更新必需）
+publish:
+  provider: github
+  owner: donokey
+  repo: Step-On-Chord
