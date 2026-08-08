@@ -79,7 +79,7 @@ export function UpdatePrompt() {
                 <p className="mt-1 max-h-24 overflow-y-auto whitespace-pre-wrap break-words font-vt text-xs leading-snug text-ink-dim">
                   {update.releaseNotes || '更新说明见 GitHub Releases'}
                 </p>
-                <p className="mt-1.5 font-vt text-xs text-ink-faint">正在自动下载新版本…</p>
+                <p className="mt-1.5 font-vt text-xs text-ink-faint">正在自动下载更新（差分优先）…</p>
                 <div className="mt-2 flex justify-end">
                   <button type="button" onClick={dismiss} className="btn-pixel px-2 py-1 text-xs">
                     稍后
