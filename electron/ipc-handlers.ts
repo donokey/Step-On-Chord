@@ -84,6 +84,8 @@ export function registerIpcHandlers(
   // ---- 应用更新（electron-updater，仅打包版生效） ----
   ipcMain.handle('updater:check', () => updater.check())
   ipcMain.handle('updater:install', () => updater.install())
+  // 渲染进程挂载时拉取状态快照（避免错过弹窗前的推送）
+  ipcMain.handle('updater:get-status', () => updater.getStatus())
 
   // ---- 分析历史（SQLite） ----
   ipcMain.handle('history:list', () => history.list())

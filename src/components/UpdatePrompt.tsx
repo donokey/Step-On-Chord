@@ -36,6 +36,16 @@ export function UpdatePrompt() {
   const hideTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
+    // 挂载时先拉取主进程状态快照（避免错过弹窗挂载前已发生的推送）
+    void bridge.updater.getStatus().then((status) => {
+      if (!status) return
+      const transient = status.status === 'not-available' || status.status === 'error'
+      if (!transient && dismissedRef.current) return
+      setUpdate(status)
+      if (transient) {
+        hideTimerRef.current = window.setTimeout(() => setUpdate(null), TRANSIENT_MS)
+      }
+    })
     const unsubscribe = bridge.updater.onStatus((status) => {
       if (status.status === 'checking') return // 静默阶段不打扰
       const transient = status.status === 'not-available' || status.status === 'error'

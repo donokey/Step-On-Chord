@@ -1,6 +1,6 @@
 # v0.1.0 打包状态与遗留问题 / Packaging Status & Known Issues
 
-> 更新日期：2026-08-08（v0.2.0-beta.1 主线，新增版本号规范）
+> 更新日期：2026-08-09（v0.2.0-beta.3 主线，应用内更新端到端验证通过）
 > 本文档记录 Windows 安装包的构建状态、已验证项、阻塞项与重建注意事项，方便在其他机器上接续工作。
 
 ## 一、当前状态总览
@@ -57,10 +57,34 @@
 3. `git tag v<version>` + `git push --tags`；
 4. `gh release create v<version> <安装包与 blockmap 路径>`（公开仓库无需 GH_TOKEN，设置亦无妨）。
 
-**当前版本**：package.json = `0.2.0-beta.1`（自动更新 + 工作台项目系统），下次发版 tag 为 `v0.2.0-beta.1`。
+**当前版本**：package.json = `0.2.0-beta.3`（自动更新 + 工作台项目系统），已发布 GitHub Release `v0.2.0-beta.3`。
 
-## 六、下一步
+## 六、应用内更新（electron-updater + GitHub Releases，v0.2.0-beta.1 起）
 
-1. 在干净机器完成第三节验证清单；
-2. 验证通过后把 `release/step-on-chord-0.1.0-setup.exe` 发布为 GitHub Release（README 安装节已链接 Releases 页）；
-3. 长期方案：考虑代码签名（EV/OV 证书）彻底解决 EDR/SmartScreen 拦截。
+**链路**：应用启动 10s 静默检查 → 发现新版自动下载（差分优先，失败自动回退全量）→ 用户确认 → `quitAndInstall` 重启安装。仅打包版生效（`isPackaged` 门控），dev 模式跳过。
+
+**版本约定**：发布 tag = `v` + package.json version，二者严格一致；`latest.yml` / `*-setup.exe` / `*.blockmap` 三件套必须齐备——缺 `latest.yml` 的 release 不会被 electron-updater 识别为候选（v0.1.1 即缺，属历史遗留）。
+
+**发布 checklist**（按序执行）：
+
+1. `npm version <minor|patch|prerelease>` 改版本（同步 package.json 与 package-lock.json）；
+2. 构建：`scripts/build-backend.ps1`（如后端有改动）→ `scripts/build-installer.ps1`；
+3. 核验产物：`release/` 下 `*-setup.exe`、`*.blockmap`、`latest.yml` 三件套，且 `release/win-unpacked/resources/app-update.yml` 自动生成；
+4. `git commit` + `git tag v<version>` + `git push --tags`；
+5. `gh release create v<version>` + `gh release upload` 三件套（公开仓库无需 GH_TOKEN）。
+
+**已端到端验证（2026-08-09，beta.2 → beta.3）**：检查发现新版、自动下载（差分 404 自动回退全量）、下载完成提示、用户确认后 quitAndInstall → NSIS 安装器 → 版本更新并自动启动。
+
+**注意**：
+
+- `electron-builder --dir`（`npm run pack`）**不生成** `app-update.yml`，更新验证必须用完整 NSIS 构建；临时验证可手动补该文件（内容与生成格式一致，勿带 BOM）；
+- `github.com` 域名被 SNI 阻断的网络下检查更新会失败（`api.github.com` 正常不代表 `github.com` 可用）；本地验证可临时将 app-update.yml 改为 generic provider + `python -m http.server`；
+- 升级安装若提示「请关闭正在运行的应用」，需先关闭所有实例；升级已装旧版本前建议先卸载旧版；
+- 0.1.x 用户无法自动升级到 0.2.0-beta.x（prerelease 被过滤），需等 0.2.0 稳定版发布。
+
+## 七、下一步
+
+1. 发布 0.2.0 稳定版（非 beta），0.1.x 用户即可自动升级（v0.1.1 缺 latest.yml 的历史问题随之解决）；
+2. 提交当前工作区变更（package.json = beta.3、updater.ts 诊断日志与异常兜底）并同步 tag；
+3. 在干净机器完成第三节验证清单（模型下载/分析实测）；
+4. 长期方案：代码签名（EV/OV 证书）彻底解决 EDR/SmartScreen 拦截。

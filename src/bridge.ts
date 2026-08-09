@@ -64,6 +64,7 @@ const fallback: ChordcraftApi = {
   updater: {
     check: async () => {},
     install: async () => {},
+    getStatus: async () => null,
     onStatus: () => () => {},
   },
   shell: {

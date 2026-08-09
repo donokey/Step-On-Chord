@@ -102,6 +102,8 @@ const api = {
   updater: {
     check: (): Promise<void> => ipcRenderer.invoke('updater:check'),
     install: (): Promise<void> => ipcRenderer.invoke('updater:install'),
+    /** 当前状态快照（组件挂载时主动拉取，避免错过已发生的推送） */
+    getStatus: (): Promise<UpdateStatus | null> => ipcRenderer.invoke('updater:get-status'),
     onStatus: subscribe<UpdateStatus>('updater:status'),
   },
   /** 系统 Shell（打开文件夹 / 外部链接） */

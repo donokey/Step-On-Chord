@@ -34,6 +34,8 @@ export default function App() {
           <ModelsSetupView onEnterAnyway={() => setShowModelsSetup(false)} />
         </main>
         <StatusBar />
+        {/* 更新浮层常驻：模型下载页也不阻塞更新提示 */}
+        <UpdatePrompt />
       </div>
     )
   }
