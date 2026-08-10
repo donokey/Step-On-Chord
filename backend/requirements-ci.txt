@@ -1,0 +1,6 @@
+# CI 最小依赖集：仅供 backend/tests 纯函数测试使用
+# 不安装 requirements.txt 全量（torch 等推理依赖太重，且测试不加载模型/不联网）
+pytest>=8.0
+numpy>=1.24
+soundfile>=0.12
+librosa>=0.10
