@@ -7,6 +7,8 @@ export interface CurrentProject {
   folderPath: string
   project: SongProject
   audioMissing: boolean
+  /** 磁盘上缺失的附件 id 列表（附件标灰提示） */
+  attachmentMissing: string[]
 }
 
 interface ProjectState {
@@ -43,7 +45,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   createProject: async (parentDir, name) => {
     try {
       const { folderPath, project } = await bridge.projects.create(parentDir, name)
-      set({ current: { folderPath, project: project as SongProject, audioMissing: false }, error: null })
+      set({ current: { folderPath, project: project as SongProject, audioMissing: false, attachmentMissing: [] }, error: null })
       await get().refresh()
       return true
     } catch (err) {
@@ -60,6 +62,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           folderPath: result.folderPath,
           project: result.project as SongProject,
           audioMissing: result.audioMissing,
+          attachmentMissing: result.attachmentMissing ?? [],
         },
         error: null,
       })

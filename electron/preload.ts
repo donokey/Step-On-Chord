@@ -36,6 +36,8 @@ const api = {
   /** 原生文件对话框（返回绝对路径，取消时为 null） */
   dialog: {
     openFile: (): Promise<string | null> => ipcRenderer.invoke('dialog:open-file'),
+    /** 附件导入：任意文件类型 */
+    openAttachment: (): Promise<string | null> => ipcRenderer.invoke('dialog:open-attachment'),
     openFolder: (): Promise<string | null> => ipcRenderer.invoke('dialog:open-folder'),
     /** 保存文本文件（导出和弦谱），返回已保存路径 */
     saveFile: (options: SaveFileOptions): Promise<string | null> => ipcRenderer.invoke('dialog:save-file', options),

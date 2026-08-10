@@ -12,6 +12,7 @@ const fallback: ChordcraftApi = {
   },
   dialog: {
     openFile: async () => null,
+    openAttachment: async () => null,
     openFolder: async () => null,
     saveFile: async () => null,
   },
@@ -43,7 +44,7 @@ const fallback: ChordcraftApi = {
   projects: {
     list: async () => [],
     create: async () => ({ folderPath: '', project: {} }),
-    open: async () => ({ folderPath: '', project: {}, audioMissing: false }),
+    open: async () => ({ folderPath: '', project: {}, audioMissing: false, attachmentMissing: [] }),
     save: async () => {},
     remove: async () => {},
     locateAudio: async () => null,

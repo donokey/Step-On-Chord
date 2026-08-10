@@ -3,6 +3,7 @@ import { bridge } from '../../bridge'
 import { useProjectStore } from '../../stores/projectStore'
 import { PanelTitle } from '../PanelTitle'
 import { LyricsTab } from '../lyrics/LyricsTab'
+import { FilesTab } from '../files/FilesTab'
 
 type DetailTab = 'analysis' | 'lyrics' | 'files'
 
@@ -159,12 +160,7 @@ export function ProjectDetailView() {
 
         {tab === 'lyrics' && <LyricsTab />}
 
-        {tab === 'files' && (
-          <div className="flex flex-1 flex-col items-center justify-center gap-2 py-10">
-            <p className="font-vt text-lg text-ink-dim">附件收纳（阶段 4 实现）</p>
-            <p className="font-vt text-sm text-ink-faint">伴奏 / 编曲 / demo 文件管理</p>
-          </div>
-        )}
+        {tab === 'files' && <FilesTab />}
       </section>
     </div>
   )

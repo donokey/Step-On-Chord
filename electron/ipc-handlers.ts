@@ -47,6 +47,18 @@ export function registerIpcHandlers(
     return canceled ? null : filePaths[0]
   })
 
+  // 附件导入用：任意文件类型（伴奏 / demo / 工程文件等）
+  ipcMain.handle('dialog:open-attachment', async () => {
+    const win = getWindow()
+    if (!win) return null
+    const { canceled, filePaths } = await dialog.showOpenDialog(win, {
+      title: '选择要导入的附件',
+      properties: ['openFile'],
+      filters: [{ name: '所有文件', extensions: ['*'] }],
+    })
+    return canceled ? null : filePaths[0]
+  })
+
   ipcMain.handle('dialog:open-folder', async () => {
     const win = getWindow()
     if (!win) return null

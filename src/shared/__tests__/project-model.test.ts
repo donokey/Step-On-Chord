@@ -133,16 +133,32 @@ describe('不可变操作', () => {
 
   it('附件增/改/删', () => {
     let p = createProject('a', NOW)
-    p = addAttachment(p, { id: 'att1', name: 'demo.mp3', rel_path: 'attachments/demo.mp3', kind: 'demo', note: '', added_at: NOW })
+    p = addAttachment(p, { id: 'att1', name: 'demo.mp3', rel_path: 'attachments/demo.mp3', kind: 'demo', note: '', size: 12_345, added_at: NOW })
     expect(p.attachments).toHaveLength(1)
+    expect(p.attachments[0].size).toBe(12_345)
     p = updateAttachment(p, 'att1', { note: '第一版' })
     expect(p.attachments[0].note).toBe('第一版')
     p = removeAttachment(p, 'att1')
     expect(p.attachments).toHaveLength(0)
     // 不可变：原对象不受影响
     const orig = createProject('b', NOW)
-    const withAtt = addAttachment(orig, { id: 'x', name: 'n', rel_path: 'r', kind: 'other', note: '', added_at: NOW })
+    const withAtt = addAttachment(orig, { id: 'x', name: 'n', rel_path: 'r', kind: 'other', note: '', size: 0, added_at: NOW })
     expect(orig.attachments).toHaveLength(0)
     expect(withAtt.attachments).toHaveLength(1)
+  })
+
+  it('旧附件数据缺 size 字段时默认 0（向后兼容）', () => {
+    const legacy = validateProject({
+      format: PROJECT_FORMAT,
+      version: PROJECT_VERSION,
+      name: 'x',
+      attachments: [{ id: 'a1', name: 'n', rel_path: 'attachments/n', kind: 'other', note: '', added_at: NOW }],
+    })
+    expect(legacy.attachments[0].size).toBe(0)
+    // 序列化-解析往返保留 size
+    const p = addAttachment(createProject('a', NOW), {
+      id: 'att1', name: 'f.mp3', rel_path: 'attachments/f.mp3', kind: 'demo', note: '', size: 2048, added_at: NOW,
+    })
+    expect(parseProject(serializeProject(p)).attachments[0].size).toBe(2048)
   })
 })

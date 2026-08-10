@@ -56,6 +56,8 @@ export interface ProjectAttachment {
   rel_path: string
   kind: AttachmentKind
   note: string
+  /** 文件大小（字节），旧数据可能缺失（默认 0） */
+  size: number
   added_at: number
 }
 
@@ -162,6 +164,7 @@ export function validateProject(data: unknown): SongProject {
       rel_path: String(raw.rel_path ?? ''),
       kind: kind as AttachmentKind,
       note: String(raw.note ?? ''),
+      size: Number(raw.size ?? 0),
       added_at: Number(raw.added_at ?? 0),
     }
   })

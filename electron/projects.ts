@@ -1,4 +1,5 @@
 import { shell } from 'electron'
+import { statSync } from 'node:fs'
 import { access, copyFile, mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import type { ProjectSummary } from './types'
@@ -20,6 +21,8 @@ export interface ProjectOpenResult {
   folderPath: string
   project: SongProject
   audioMissing: boolean
+  /** 磁盘上缺失的附件 id 列表（用于前端标灰提示） */
+  attachmentMissing: string[]
 }
 
 /**
@@ -52,7 +55,7 @@ export class ProjectsService {
     return { folderPath, project }
   }
 
-  /** 打开项目：读取 + 校验 + 音频存在性检查（失败路径由 IPC 层提示重新定位） */
+  /** 打开项目：读取 + 校验 + 音频/附件存在性检查（失败路径由 IPC 层提示重新定位） */
   async open(folderPath: string): Promise<ProjectOpenResult> {
     const raw = await readFile(this.projectFilePath(folderPath), 'utf-8')
     const project = parseProject(raw)
@@ -64,8 +67,16 @@ export class ProjectsService {
         audioMissing = true
       }
     }
+    const attachmentMissing: string[] = []
+    for (const attachment of project.attachments) {
+      try {
+        await access(path.join(folderPath, attachment.rel_path))
+      } catch {
+        attachmentMissing.push(attachment.id)
+      }
+    }
     this.index.upsert(project.name, folderPath, project.updated_at)
-    return { folderPath, project, audioMissing }
+    return { folderPath, project, audioMissing, attachmentMissing }
   }
 
   /** 保存项目（原子写 + 刷新索引） */
@@ -103,7 +114,7 @@ export class ProjectsService {
     return next
   }
 
-  /** 添加附件：复制进 attachments/ + 更新项目 */
+  /** 添加附件：复制进 attachments/ + 更新项目（记录文件大小） */
   async addAttachment(
     folderPath: string,
     project: SongProject,
@@ -116,12 +127,14 @@ export class ProjectsService {
     const fileName = path.basename(sourcePath)
     const relPath = path.join(ATTACHMENTS_DIR_NAME, fileName)
     await copyFile(sourcePath, path.join(folderPath, relPath))
+    const size = statSync(sourcePath).size
     const attachment: ProjectAttachment = {
       id: `att-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
       name: fileName,
       rel_path: relPath,
       kind,
       note,
+      size,
       added_at: Date.now(),
     }
     const next: SongProject = {

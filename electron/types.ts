@@ -95,6 +95,8 @@ export interface ProjectOpenResult {
   folderPath: string
   project: object
   audioMissing: boolean
+  /** 磁盘上缺失的附件 id 列表（前端标灰提示） */
+  attachmentMissing: string[]
 }
 
 /** 应用更新状态（主进程 → 渲染进程推送） */
