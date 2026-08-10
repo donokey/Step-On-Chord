@@ -1,10 +1,11 @@
 # Step On Chord 乐手工作台规划 v1.0（Spec + 路线图）
 
-- **日期**: 2026-08-08
-- **状态**: 待用户确认（确认前不动代码）
+- **日期**: 2026-08-08（2026-08-10 状态回填）
+- **状态**: 阶段 0-2 ✅ 已完成；阶段 3-5 排程见 `docs/v0.3-execution-plan.md`（B1-B3）；阶段 8 的 electron-updater 已提前落地（T7，v0.2.0）
+- **机器分工（2026-08-10 修订，见 v0.3-execution-plan.md 第一节）**: 公司电脑承担全部开发/测试/eval 批量评估；另一台电脑仅负责打包、装包后自动更新 E2E 验证、发 GitHub Release
 - **定位变化**: 从"和弦分析工具"升级为"乐手辅助工作台"——以歌曲为中心，分析、歌词、伴奏文件、导出围绕一首歌组织
 - **与 engineering-hardening-plan.md 的关系**: 本文档重排了全部阶段的优先级；补强计划中的任务定义仍然有效，作为各阶段的工程细节引用
-- **目标版本**: v0.2.0（工作台版）
+- **目标版本**: v0.2.0（工作台版）—— 实际发布进度见下方路线图各阶段标记
 
 ## 0. 假设清单（先确认，有异议现在提）
 
@@ -160,41 +161,47 @@ backend/tests/              → pytest（工程化补强计划 Phase 2 任务并
 
 > 原 engineering-hardening-plan.md 的 Phase 编号在括号内标注，便于对照。
 
-### 阶段 0：v0.1.1 发布【即刻，新电脑】
+### 阶段 0：v0.1.1 发布【即刻，新电脑】✅ 已完成（tag v0.1.1 → `296a7e8`）
 
 沿用补强计划"即刻行动"节：pull → 版本升 0.1.1 → 构建 → v0.1.1 tag + Release → v0.1.0 Release 补已知问题说明。
 
-### 阶段 1：新电脑环境搭建与验证（约 0.5 天）
+> 历史遗留：v0.1.1 Release 缺 `latest.yml`，不被 electron-updater 识别为更新候选（详见 packaging-status.md 第六节）。0.1.x 用户需手动升级到 0.2.0。
 
-一切开发的前提。按 docs/run-eval-on-new-machine.md 装环境，跑 Beatles 两首 gt_compare 对照参考值（Let It Be 根音 0.861）。test-audio 手动迁移在此阶段完成（核对 35 首）。
+### 阶段 1：新电脑环境搭建与验证（约 0.5 天）✅ 已完成（分工已修订）
 
-- [ ] 验收：两首指标与参考值一致（±0.02）；test-audio 35 首就位
+一切开发的前提。按 docs/run-eval-on-new-machine.md 装环境，跑 Beatles 两首 gt_compare 对照参考值（Let It Be 根音 0.861）。
 
-### 阶段 2：歌曲项目系统 + 单测打底（约 2 天，本路线图核心）
+> 2026-08-10 实测修订：公司电脑具备完整开发能力（Python 3.12 + torch CPU + 93 首 test-audio + 全部 eval 资产，08-06 批量跑分日志即本机产出），开发不再依赖"新电脑"。
+
+- [x] 验收：环境可用（eval 批量跑分已在本机产出）；test-audio 93 首就位
+
+### 阶段 2：歌曲项目系统 + 单测打底（约 2 天，本路线图核心）✅ 已完成（`fa05849`..`20c4f8d`）
+
+> 执行记录：T2.1-T2.4 → `fa05849`（项目系统地基：模型+索引+IPC）、`0c1d486`（项目列表页+导航）、`d105a3c`（项目详情页+分析 tab）；T2.5/T2.6 → `470feba`（存为项目出口）；T2.7 → `20c4f8d`（backend pytest 骨架+核心纯函数测试）。
 
 任务（依赖序）:
 
-- [ ] T2.1 project-model 纯逻辑 + vitest 骨架（模型定义/校验/读写/原子保存）
+- [x] T2.1 project-model 纯逻辑 + vitest 骨架（模型定义/校验/读写/原子保存）
   - 验收：vitest 跑通，模型读写用例全绿
   - 文件：src/shared/project-model.ts、vitest 配置
   - 规模：M
-- [ ] T2.2 electron/projects.ts + projects 索引表 + IPC（create/open/save/list/locate-audio）
+- [x] T2.2 electron/projects.ts + projects 索引表 + IPC（create/open/save/list/locate-audio）
   - 验收：主进程单测或手动脚本验证建夹/读写/索引；analyses 表数据不受影响
   - 文件：electron/projects.ts、electron/db.ts、electron/ipc-handlers.ts、preload.ts
   - 规模：M
-- [ ] T2.3 ProjectsView 列表页 + SideNav 新导航项
+- [x] T2.3 ProjectsView 列表页 + SideNav 新导航项
   - 验收：能看到项目列表（名称/更新时间），可打开/删除（删除=移除索引，文件夹进回收站）
   - 规模：S
-- [ ] T2.4 ProjectDetailView 骨架 + 分析 tab（载入/展示现有 AnalysisResult，复用历史页载入逻辑）
+- [x] T2.4 ProjectDetailView 骨架 + 分析 tab（载入/展示现有 AnalysisResult，复用历史页载入逻辑）
   - 验收：打开项目能看到分析结果；无分析时提示去分析
   - 规模：M
-- [ ] T2.5 "存为项目"出口：分析页保存按钮 + 历史页"转存为项目"
+- [x] T2.5 "存为项目"出口：分析页保存按钮 + 历史页"转存为项目"
   - 验收：一次分析可存成项目，重开恢复一致（含手动校正）
   - 规模：S
-- [ ] T2.6 音频引用失效处理 + "收集进项目"复制选项
+- [x] T2.6 音频引用失效处理 + "收集进项目"复制选项
   - 验收：移走原音频后打开项目有明确提示并可重新定位
   - 规模：S
-- [ ] T2.7 backend pytest 骨架 + 核心纯函数测试【补强计划 Phase 2 任务并入】
+- [x] T2.7 backend pytest 骨架 + 核心纯函数测试【补强计划 Phase 2 任务并入】
   - 验收：py -m pytest 全绿 <30s
   - 规模：M
 
@@ -239,13 +246,13 @@ backend/tests/              → pytest（工程化补强计划 Phase 2 任务并
 
 **Checkpoint 7**: 报告产出，指标可比；GT_PROGRESS.md 更新。
 
-### 阶段 8：基建收尾【补强计划 Phase 4/5/6】
+### 阶段 8：基建收尾【补强计划 Phase 4/5/6】（electron-updater 已提前完成）
 
-- [ ] 最小 CI（tsc + pytest + vitest）
-- [ ] electron-updater 接入 + CHANGELOG 常态化 + 签名触发阈值
+- [ ] 最小 CI（tsc + pytest + vitest）—— 排程见 v0.3-execution-plan.md A3
+- [x] electron-updater 接入（T7，`775be1d`..`aa901f1`，beta.2→beta.3 升级链路 E2E 验证通过）+ CHANGELOG 常态化 + 签名触发阈值（后两项待定）
 - [ ] doctor.py 环境自检
 
-**Checkpoint 8（v0.2.0 发布验收）**: 全部成功标准达成 → 发 v0.2.0 工作台版。
+**Checkpoint 8（v0.2.0 发布验收）**: ✅ v0.2.0 stable 已于 2026-08-09 发布（`aa901f1`，含项目系统 + 自动更新；歌词/附件/导出三件套顺延至 v0.3.0，见 v0.3-execution-plan.md B 组）。
 
 ## 九、风险与对策
 
@@ -265,4 +272,4 @@ backend/tests/              → pytest（工程化补强计划 Phase 2 任务并
 3. **MIDI 内容**：v1 只出和弦块长音是否够用，还是要加贝斯根音轨？
 4. **歌词节类型预设**：主歌/副歌/桥段/前奏/尾奏/自由 这套是否够？
 5. **历史页去留**：项目系统上线后，历史页保持现状（未存项目的记录池）即可，还是逐步引导全部转项目？
-6. **v0.2.0 发布切点**：阶段 5（导出）完成后发，还是阶段 4（附件）完成先发一个 0.2.0-beta？
+6. **v0.2.0 发布切点**：✅ 已由实际行动回答（记录于 2026-08-10）—— v0.2.0 于 08-09 提前发布（未等阶段 4/5），包含项目系统（阶段 2）+ 自动更新（T7 提前落地）；歌词/附件/导出三件套顺延到 v0.3.0（排程见 v0.3-execution-plan.md B1-B3）。发布路径：0.2.0-beta.1 → beta.2 → beta.3 → stable，beta 阶段完成自动更新链路 E2E 验证。

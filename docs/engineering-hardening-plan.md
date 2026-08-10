@@ -1,10 +1,10 @@
 # Step On Chord 工程化补强计划 v1.0
 
-- **日期**: 2026-08-06（2026-08-07 更新）
-- **状态**: Phase 0 已完成；Phase 1-6 待执行（新电脑）
-- **注意**: 2026-08-08 起阶段优先级由 `docs/musician-workbench-spec.md`（乐手工作台规划）重排，本文档的任务定义仍作为各阶段的工程细节引用
+- **日期**: 2026-08-06（2026-08-10 更新）
+- **状态**: Phase 0 ✅、Phase 2（单测打底）✅、Task 5.1（electron-updater，即 T7）✅；其余待执行，排程已并入 `docs/v0.3-execution-plan.md`
+- **注意**: 2026-08-08 起阶段优先级由 `docs/musician-workbench-spec.md`（乐手工作台规划）重排，本文档的任务定义仍作为各阶段的工程细节引用；2026-08-10 起执行排程以 `docs/v0.3-execution-plan.md` 为准
 - **执行方式**: 代码改动交 Qoder 执行，用户负责决策与验收；每个 Phase 完成后汇报，确认后再进入下一个
-- **适用环境**: 后续所有开发在用户的另一台电脑上完成。Phase 0 在公司电脑执行（纯 git 操作，无重负载），其余全部在新电脑执行
+- **适用环境**: 2026-08-10 机器分工修订（见 v0.3-execution-plan.md 第一节）：公司电脑承担全部开发/测试/eval，另一台电脑仅负责打包、装包 E2E 验证与发 Release
 
 ## 一、背景与现状
 
@@ -34,7 +34,9 @@
 4. 简单直接，拒绝过度工程：CI 只跑单元测试和类型检查，不做重推理；不引入新的重型框架。
 5. 下一次国内摇滚测试（草东/万青等）在回家后进行，不提前跑。
 
-## 即刻行动：新电脑上的下一次发布（先于 Phase 1）
+## 即刻行动：新电脑上的下一次发布（先于 Phase 1）✅ v0.1.1 已发布
+
+> **执行记录**：v0.1.1 已发布，tag 指向 `296a7e8`（fix: engine respects injected CHORDCRAFT_MODEL_DIR，含两个打包修复 + BPM 增强）。历史遗留：v0.1.1 Release 缺 `latest.yml`，不会被 electron-updater 识别为候选（影响见 packaging-status.md 第六节）。
 
 新安装包已在新电脑构建完成（含两个打包修复 + BPM 增强），尚未上传。正确发布方式：
 
@@ -167,16 +169,18 @@
 
 ---
 
-### Phase 2：单元测试打底（新电脑，约 1 天）
+### Phase 2：单元测试打底（新电脑，约 1 天）✅ 2026-08-09 完成（`20c4f8d`）
 
 > 目标：给核心算法装秒级回归护栏。只测纯函数，不测音频 IO，追求快而不是覆盖率。
+>
+> **执行记录**：`backend/tests/` 已落地 3 文件（conftest.py + test_chord_recognition.py + test_song_analysis.py，commit `20c4f8d`）；前端 vitest 也已落地（src/shared/__tests__/project-model.test.ts，随项目系统 T2.1 入库）。
 
 #### Task 2.1 pytest 骨架
 
 **描述**: 建立 `backend/tests/` 目录与 `backend/requirements-dev.txt`（pytest 及必要依赖）。
 
 **验收标准**:
-- [ ] `py -m pytest backend/tests` 可运行（哪怕暂时 0 用例）
+- [x] `py -m pytest backend/tests` 可运行（哪怕暂时 0 用例）
 
 **规模**: S
 
@@ -287,13 +291,15 @@
 
 > 目标：把 v0.1.0 的"全量下载 + 手动安装"升级为可持续的发布链路。
 
-#### Task 5.1 electron-updater 接入
+#### Task 5.1 electron-updater 接入 ✅ 2026-08-09 完成（T7，`775be1d`..`aa901f1`）
 
 **描述**: 接 electron-updater，以 GitHub Releases 为更新源，实现新版本检测与提示更新（不强制静默更新，桌面软件给用户确认）。
 
+> **执行记录**：实现于 `775be1d`（feat: in-app auto-update via electron-updater），经 beta.2/beta.3 两轮迭代（`441a365`、`d5d27c6`），v0.2.0 stable（`aa901f1`）收束。beta.2 → beta.3 升级链路已端到端验证（含差分 404 回退全量），流程文档已写入 packaging-status.md 第六节。
+
 **验收标准**:
-- [ ] 低版本安装包能检测到高版本并提示
-- [ ] 更新流程文档写入 packaging-status.md
+- [x] 低版本安装包能检测到高版本并提示（beta.2 → beta.3 实测通过）
+- [x] 更新流程文档写入 packaging-status.md（第六节）
 
 **规模**: M
 
