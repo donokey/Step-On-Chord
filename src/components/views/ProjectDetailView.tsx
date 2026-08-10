@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { bridge } from '../../bridge'
 import { useProjectStore } from '../../stores/projectStore'
 import { PanelTitle } from '../PanelTitle'
+import { LyricsTab } from '../lyrics/LyricsTab'
 
 type DetailTab = 'analysis' | 'lyrics' | 'files'
 
@@ -156,12 +157,7 @@ export function ProjectDetailView() {
           </div>
         )}
 
-        {tab === 'lyrics' && (
-          <div className="flex flex-1 flex-col items-center justify-center gap-2 py-10">
-            <p className="font-vt text-lg text-ink-dim">歌词编辑器（阶段 3 实现）</p>
-            <p className="font-vt text-sm text-ink-faint">独立分节文本编辑，不与和弦联动</p>
-          </div>
-        )}
+        {tab === 'lyrics' && <LyricsTab />}
 
         {tab === 'files' && (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 py-10">
