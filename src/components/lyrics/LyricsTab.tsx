@@ -40,6 +40,7 @@ export function LyricsTab() {
   const [draft, setDraft] = useState<Draft | null>(null)
   const [saving, setSaving] = useState(false)
   const [savedFlash, setSavedFlash] = useState(false)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const timerRef = useRef<number | null>(null)
   const savedTimerRef = useRef<number | null>(null)
 
@@ -97,6 +98,7 @@ export function LyricsTab() {
 
   const removeSection = useCallback(
     (id: string) => {
+      setConfirmDeleteId(null)
       const index = sections.findIndex((item) => item.id === id)
       void updateProject((project) => removeLyricsSection(project, id)).catch(() => {})
       if (selectedId === id) {
@@ -156,7 +158,10 @@ export function LyricsTab() {
                 <button
                   type="button"
                   className="block w-full text-left"
-                  onClick={() => setSelectedId(section.id)}
+                  onClick={() => {
+                    setSelectedId(section.id)
+                    setConfirmDeleteId(null)
+                  }}
                 >
                   <span className="font-vt text-[10px] text-warm">{TYPE_LABELS[section.type]}</span>
                   <span className="ml-1 block truncate font-vt text-sm text-ink">
@@ -164,32 +169,54 @@ export function LyricsTab() {
                   </span>
                 </button>
                 <div className="mt-1 flex gap-1 opacity-60 group-hover:opacity-100">
-                  <button
-                    type="button"
-                    onClick={() => moveSection(section.id, -1)}
-                    disabled={index === 0}
-                    className="btn-pixel px-1 py-0 text-[10px] disabled:opacity-30"
-                    title="上移"
-                  >
-                    ▲
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => moveSection(section.id, 1)}
-                    disabled={index === sections.length - 1}
-                    className="btn-pixel px-1 py-0 text-[10px] disabled:opacity-30"
-                    title="下移"
-                  >
-                    ▼
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => removeSection(section.id)}
-                    className="btn-pixel px-1 py-0 text-[10px] text-error"
-                    title="删除"
-                  >
-                    ✕
-                  </button>
+                  {confirmDeleteId === section.id ? (
+                    <>
+                      <span className="px-1 py-0 font-vt text-[10px] text-error">删除此段？</span>
+                      <button
+                        type="button"
+                        onClick={() => removeSection(section.id)}
+                        className="btn-pixel px-1 py-0 text-[10px] text-error"
+                      >
+                        确认
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="btn-pixel px-1 py-0 text-[10px]"
+                      >
+                        取消
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => moveSection(section.id, -1)}
+                        disabled={index === 0}
+                        className="btn-pixel px-1 py-0 text-[10px] disabled:opacity-30"
+                        title="上移"
+                      >
+                        ▲
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveSection(section.id, 1)}
+                        disabled={index === sections.length - 1}
+                        className="btn-pixel px-1 py-0 text-[10px] disabled:opacity-30"
+                        title="下移"
+                      >
+                        ▼
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteId(section.id)}
+                        className="btn-pixel px-1 py-0 text-[10px] text-error"
+                        title="删除"
+                      >
+                        ✕
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ))}

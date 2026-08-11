@@ -114,7 +114,31 @@ export class ProjectsService {
     return next
   }
 
-  /** 添加附件：复制进 attachments/ + 更新项目（记录文件大小） */
+  /** 计算 attachments/ 内不冲突的唯一文件名：demo.mp3 → demo (2).mp3 …（同时避开元数据已占用名与磁盘孤立文件） */
+  private async uniqueAttachmentName(attDir: string, project: SongProject, fileName: string): Promise<string> {
+    const usedNames = new Set(project.attachments.map((item) => path.basename(item.rel_path)))
+    const dot = fileName.lastIndexOf('.')
+    const stem = dot > 0 ? fileName.slice(0, dot) : fileName
+    const ext = dot > 0 ? fileName.slice(dot) : ''
+    let candidate = fileName
+    let counter = 2
+    while (usedNames.has(candidate) || (await this.pathExists(path.join(attDir, candidate)))) {
+      candidate = `${stem} (${counter})${ext}`
+      counter += 1
+    }
+    return candidate
+  }
+
+  private async pathExists(target: string): Promise<boolean> {
+    try {
+      await access(target)
+      return true
+    } catch {
+      return false
+    }
+  }
+
+  /** 添加附件：复制进 attachments/ + 更新项目（记录文件大小；重名自动加序号防覆盖） */
   async addAttachment(
     folderPath: string,
     project: SongProject,
@@ -124,7 +148,7 @@ export class ProjectsService {
   ): Promise<SongProject> {
     const attDir = path.join(folderPath, ATTACHMENTS_DIR_NAME)
     await mkdir(attDir, { recursive: true })
-    const fileName = path.basename(sourcePath)
+    const fileName = await this.uniqueAttachmentName(attDir, project, path.basename(sourcePath))
     const relPath = path.join(ATTACHMENTS_DIR_NAME, fileName)
     await copyFile(sourcePath, path.join(folderPath, relPath))
     const size = statSync(sourcePath).size
