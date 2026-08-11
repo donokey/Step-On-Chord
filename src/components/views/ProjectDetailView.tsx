@@ -1,7 +1,9 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { bridge } from '../../bridge'
 import { useProjectStore } from '../../stores/projectStore'
+import { useAccompanimentStore } from '../../stores/accompanimentStore'
 import { PanelTitle } from '../PanelTitle'
+import { AccompanimentPlayer } from '../AccompanimentPlayer'
 import { LyricsTab } from '../lyrics/LyricsTab'
 import { FilesTab } from '../files/FilesTab'
 
@@ -12,6 +14,14 @@ export function ProjectDetailView() {
   const { current, closeProject, updateProject } = useProjectStore()
   const [tab, setTab] = useState<DetailTab>('analysis')
   const [busy, setBusy] = useState(false)
+  const folderPath = current?.folderPath
+
+  // 离开项目 / 切换项目时停止伴奏播放（播放条常驻本组件顶部，tab 切换不影响）
+  useEffect(() => {
+    return () => {
+      useAccompanimentStore.getState().stop()
+    }
+  }, [folderPath])
 
   const relocateAudio = useCallback(async () => {
     if (!current || busy) return
@@ -52,6 +62,11 @@ export function ProjectDetailView() {
           <button type="button" onClick={closeProject} className="btn-pixel px-2 py-1 text-xs">
             ← 返回列表
           </button>
+        </div>
+
+        {/* 伴奏播放器：常驻顶部，切 tab 不中断 */}
+        <div className="mb-2">
+          <AccompanimentPlayer />
         </div>
 
         {/* tab 栏 */}

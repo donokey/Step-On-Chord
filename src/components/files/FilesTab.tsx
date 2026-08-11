@@ -1,6 +1,9 @@
 import { useCallback, useState } from 'react'
-import { ATTACHMENT_KINDS, type AttachmentKind } from '../../shared/project-model'
+import { ATTACHMENT_KINDS, type AttachmentKind, type ProjectAttachment } from '../../shared/project-model'
 import { useProjectStore } from '../../stores/projectStore'
+import { useAccompanimentStore } from '../../stores/accompanimentStore'
+import { isAudioFileName } from '../../utils/audio'
+import { IconPause, IconPlay } from '../icons'
 import { bridge } from '../../bridge'
 
 /** 附件类型中文名 */
@@ -38,6 +41,25 @@ export function FilesTab() {
 
   const attachments = current?.project.attachments ?? []
   const missingIds = current?.attachmentMissing ?? []
+
+  // 伴奏播放器状态（用于标记当前正在播放的附件）
+  const activeTrack = useAccompanimentStore((s) => s.trackPath)
+  const activePlaying = useAccompanimentStore((s) => s.isPlaying)
+
+  /** 音频附件播放/暂停：首次加载进播放器，再点则切换播放状态 */
+  const toggleAttachment = useCallback(
+    (attachment: ProjectAttachment) => {
+      if (!current) return
+      const fullPath = `${current.folderPath}/${attachment.rel_path}`
+      const store = useAccompanimentStore.getState()
+      if (store.trackPath === fullPath) {
+        store.toggle()
+      } else {
+        void store.playTrack(fullPath, attachment.name)
+      }
+    },
+    [current],
+  )
 
   const importAttachment = useCallback(async () => {
     if (!current || busy) return
@@ -126,6 +148,20 @@ export function FilesTab() {
                 <span className="shrink-0 font-vt text-xs text-ink-faint">{formatSize(attachment.size)}</span>
                 <span className="shrink-0 font-vt text-xs text-ink-faint">{formatTime(attachment.added_at)}</span>
                 <div className="flex shrink-0 gap-1">
+                  {isAudioFileName(attachment.name) && !missing && (
+                    <button
+                      type="button"
+                      onClick={() => toggleAttachment(attachment)}
+                      className={`btn-pixel px-1.5 py-0.5 text-xs ${activeTrack === `${current?.folderPath}/${attachment.rel_path}` ? 'text-warm' : ''}`}
+                      title={activeTrack === `${current?.folderPath}/${attachment.rel_path}` && activePlaying ? '暂停' : '播放'}
+                    >
+                      {activeTrack === `${current?.folderPath}/${attachment.rel_path}` && activePlaying ? (
+                        <IconPause width={11} height={11} />
+                      ) : (
+                        <IconPlay width={11} height={11} />
+                      )}
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => void openAttachment(attachment.rel_path)}
