@@ -38,6 +38,7 @@ chordcraft-desktop-architecture.md
 
 # 评估产物（脚本与 ground truth 入库，结果不入库）
 eval/eval_results.json
+eval/ab_results.json
 eval/eval_log.txt
 eval/tested_history.jsonl
 eval/accuracy_trend.jsonl

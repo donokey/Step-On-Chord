@@ -9,6 +9,8 @@ import type {
   ProjectOpenResult,
   ProjectSummary,
   NewHistoryEntry,
+  PdfExportOptions,
+  SaveBinaryOptions,
   SaveFileOptions,
   UpdateStatus,
 } from './types'
@@ -41,6 +43,13 @@ const api = {
     openFolder: (): Promise<string | null> => ipcRenderer.invoke('dialog:open-folder'),
     /** 保存文本文件（导出和弦谱），返回已保存路径 */
     saveFile: (options: SaveFileOptions): Promise<string | null> => ipcRenderer.invoke('dialog:save-file', options),
+    /** 保存二进制文件（导出 docx 等），content 为 base64 编码 */
+    saveBinary: (options: SaveBinaryOptions): Promise<string | null> =>
+      ipcRenderer.invoke('dialog:save-binary', options),
+  },
+  /** 导出（PDF 乐谱：隐藏窗口 printToPDF） */
+  exports: {
+    pdf: (options: PdfExportOptions): Promise<string | null> => ipcRenderer.invoke('export:pdf', options),
   },
   files: {
     /** 拖拽进来的 File 对象 → 绝对路径（Electron 32+ 移除了 File.path，官方推荐 webUtils） */
@@ -87,6 +96,8 @@ const api = {
     removeAttachment: (folderPath: string, attachmentId: string): Promise<object> =>
       ipcRenderer.invoke('projects:remove-attachment', folderPath, attachmentId),
     chooseParentDir: (): Promise<string | null> => ipcRenderer.invoke('projects:choose-parent-dir'),
+    /** 项目集中存放根目录（新建项目统一建在这里） */
+    getRoot: (): Promise<string> => ipcRenderer.invoke('projects:get-root'),
   },
   /** 模型权重（首启下载页）：状态检测 / 一键下载 / 进度推送 */
   models: {

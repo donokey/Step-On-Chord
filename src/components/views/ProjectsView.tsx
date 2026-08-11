@@ -23,9 +23,10 @@ export function ProjectsView() {
   }, [creating])
 
   const startCreate = useCallback(async () => {
-    const parentDir = await bridge.projects.chooseParentDir()
-    if (!parentDir) return
-    setPendingParentDir(parentDir)
+    // 集中目录：新建项目统一建在根目录下，不再每次弹框选位置
+    const root = await bridge.projects.getRoot()
+    if (!root) return
+    setPendingParentDir(root)
     setCreating(true)
     setNameInput('')
   }, [])
@@ -61,24 +62,27 @@ export function ProjectsView() {
         </div>
 
         {creating && (
-          <div className="mb-2 flex items-center gap-2 border border-edge bg-base-deep px-2 py-1.5">
-            <input
-              ref={inputRef}
-              value={nameInput}
-              onChange={(event) => setNameInput(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter') void confirmCreate()
-                if (event.key === 'Escape') setCreating(false)
-              }}
-              placeholder="输入项目名（歌曲名）"
-              className="min-w-0 flex-1 border border-edge bg-base px-2 py-1 font-vt text-sm text-ink outline-none focus:border-warm"
-            />
-            <button type="button" onClick={() => void confirmCreate()} disabled={busy} className="btn-pixel px-2 py-1 text-xs">
-              创建
-            </button>
-            <button type="button" onClick={() => setCreating(false)} className="btn-pixel px-2 py-1 text-xs">
-              取消
-            </button>
+          <div className="mb-2 border border-edge bg-base-deep px-2 py-1.5">
+            <div className="flex items-center gap-2">
+              <input
+                ref={inputRef}
+                value={nameInput}
+                onChange={(event) => setNameInput(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') void confirmCreate()
+                  if (event.key === 'Escape') setCreating(false)
+                }}
+                placeholder="输入项目名（歌曲名）"
+                className="min-w-0 flex-1 border border-edge bg-base px-2 py-1 font-vt text-sm text-ink outline-none focus:border-warm"
+              />
+              <button type="button" onClick={() => void confirmCreate()} disabled={busy} className="btn-pixel px-2 py-1 text-xs">
+                创建
+              </button>
+              <button type="button" onClick={() => setCreating(false)} className="btn-pixel px-2 py-1 text-xs">
+                取消
+              </button>
+            </div>
+            <p className="mt-1 truncate font-vt text-xs text-ink-faint">将保存到集中目录：{pendingParentDir}</p>
           </div>
         )}
 

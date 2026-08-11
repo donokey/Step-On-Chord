@@ -47,11 +47,32 @@ export interface SaveFileOptions {
   content: string
 }
 
+/** 保存二进制文件对话框（导出 docx 等二进制产物用） */
+export interface SaveBinaryOptions {
+  title: string
+  /** 默认文件名（含扩展名） */
+  defaultName: string
+  filters: { name: string; extensions: string[] }[]
+  /** base64 编码的二进制内容 */
+  base64: string
+}
+
+/** PDF 导出（隐藏窗口 printToPDF） */
+export interface PdfExportOptions {
+  title: string
+  /** 打印用完整 HTML（浅色 A4 排版） */
+  html: string
+  /** 默认文件名（含扩展名） */
+  defaultName: string
+}
+
 /** 设置页读取的应用设置快照 */
 export interface AppSettings {
   refineQualities: boolean
   /** 模型目录绝对路径（打包后为用户目录下的 models） */
   modelsDir: string
+  /** 项目集中存放根目录（新建项目统一建在这里） */
+  projectsRoot: string
 }
 
 /** 单个待检测的模型权重文件 */
