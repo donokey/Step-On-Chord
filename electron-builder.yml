@@ -31,7 +31,8 @@ extraResources:
     to: model-sources.json
 
 win:
-  # 使用 Electron 默认图标（用户偏好，2026-08-10 决定）；build/icon.ico 不再引用
+  # 自定义应用图标（金箔徽标：音符×巫师帽，build/icon.ico 含 16-256 多尺寸）
+  icon: build/icon.ico
   target:
     - target: nsis
       arch:
