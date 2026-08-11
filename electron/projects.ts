@@ -48,6 +48,7 @@ export class ProjectsService {
   async create(parentDir: string, name: string): Promise<{ folderPath: string; project: SongProject }> {
     const project = createProject(name)
     const folderPath = path.join(parentDir, project.name)
+    await mkdir(parentDir, { recursive: true }) // 集中根目录可能尚不存在
     await mkdir(folderPath, { recursive: false })
     await mkdir(path.join(folderPath, ATTACHMENTS_DIR_NAME), { recursive: true })
     await this.atomicWrite(this.projectFilePath(folderPath), serializeProject(project))

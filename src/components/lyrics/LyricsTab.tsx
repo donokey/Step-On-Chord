@@ -8,6 +8,8 @@ import {
   type LyricsSectionType,
 } from '../../shared/project-model'
 import { useProjectStore } from '../../stores/projectStore'
+import { bridge } from '../../bridge'
+import { buildLyricsDocxBase64, lyricsDocxFileName } from '../../utils/exportLyricsDocx'
 
 /** 节类型中文名（展示与下拉选项） */
 const TYPE_LABELS: Record<LyricsSectionType, string> = {
@@ -96,6 +98,19 @@ export function LyricsTab() {
     setSelectedId(id)
   }, [updateProject])
 
+  /** 导出歌词为 docx（自选保存位置） */
+  const exportDocx = useCallback(async () => {
+    const project = current?.project
+    if (!project) return
+    const base64 = await buildLyricsDocxBase64(project)
+    await bridge.dialog.saveBinary({
+      title: '导出歌词 docx',
+      defaultName: lyricsDocxFileName(project),
+      filters: [{ name: 'Word 文档', extensions: ['docx'] }],
+      base64,
+    })
+  }, [current])
+
   const removeSection = useCallback(
     (id: string) => {
       setConfirmDeleteId(null)
@@ -134,9 +149,16 @@ export function LyricsTab() {
             '自动保存'
           )}
         </p>
-        <button type="button" onClick={addSection} className="btn-pixel px-2 py-1 text-xs">
-          + 新增段落
-        </button>
+        <div className="flex items-center gap-2">
+          {sections.length > 0 && (
+            <button type="button" onClick={() => void exportDocx()} className="btn-pixel px-2 py-1 text-xs">
+              导出 docx
+            </button>
+          )}
+          <button type="button" onClick={addSection} className="btn-pixel px-2 py-1 text-xs">
+            + 新增段落
+          </button>
+        </div>
       </div>
 
       {sections.length === 0 ? (

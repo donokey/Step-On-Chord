@@ -6,6 +6,8 @@ import { PanelTitle } from '../PanelTitle'
 import { AccompanimentPlayer } from '../AccompanimentPlayer'
 import { LyricsTab } from '../lyrics/LyricsTab'
 import { FilesTab } from '../files/FilesTab'
+import { buildChordPro, chordProFileName } from '../../utils/exportChordPro'
+import { buildScoreHtml, scorePdfFileName } from '../../utils/exportPdfHtml'
 
 type DetailTab = 'analysis' | 'lyrics' | 'files'
 
@@ -46,6 +48,35 @@ export function ProjectDetailView() {
       setBusy(false)
     }
   }, [current, busy, updateProject])
+
+  const exportChordPro = useCallback(async () => {
+    if (!current || busy) return
+    setBusy(true)
+    try {
+      await bridge.dialog.saveFile({
+        title: '导出 ChordPro 乐谱',
+        defaultName: chordProFileName(current.project),
+        filters: [{ name: 'ChordPro 乐谱', extensions: ['cho'] }],
+        content: buildChordPro(current.project),
+      })
+    } finally {
+      setBusy(false)
+    }
+  }, [current, busy])
+
+  const exportPdf = useCallback(async () => {
+    if (!current || busy) return
+    setBusy(true)
+    try {
+      await bridge.exports.pdf({
+        title: '导出 PDF 乐谱',
+        defaultName: scorePdfFileName(current.project),
+        html: buildScoreHtml(current.project),
+      })
+    } finally {
+      setBusy(false)
+    }
+  }, [current, busy])
 
   if (!current) return null
   const { project, audioMissing } = current
@@ -170,6 +201,18 @@ export function ProjectDetailView() {
                 <p className="font-vt text-sm text-ink-faint">到「分析」页拖入歌曲，完成后点「存为项目」</p>
               </div>
             )}
+            {/* 导出乐谱（ChordPro / PDF，MIDI 暂缓） */}
+            <div className="border border-edge bg-base-deep px-3 py-2">
+              <p className="mb-1 font-vt text-xs text-ink-faint">导出乐谱</p>
+              <div className="flex gap-2">
+                <button type="button" onClick={() => void exportChordPro()} disabled={busy} className="btn-pixel px-2 py-0.5 text-xs">
+                  ChordPro (.cho)
+                </button>
+                <button type="button" onClick={() => void exportPdf()} disabled={busy} className="btn-pixel px-2 py-0.5 text-xs">
+                  PDF 乐谱
+                </button>
+              </div>
+            </div>
           </div>
         )}
 

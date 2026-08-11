@@ -6,7 +6,7 @@ import type { ModelsManager } from './models'
 import type { ProjectsService } from './projects'
 import type { SettingsStore } from './settings'
 import type { SidecarManager } from './sidecar'
-import type { AppSettings, NewHistoryEntry, SaveFileOptions } from './types'
+import type { AppSettings, NewHistoryEntry, PdfExportOptions, SaveBinaryOptions, SaveFileOptions } from './types'
 import type { UpdaterManager } from './updater'
 
 const AUDIO_FILE_FILTERS = [
@@ -81,6 +81,41 @@ export function registerIpcHandlers(
     if (canceled || !filePath) return null
     await writeFile(filePath, options.content, 'utf-8')
     return filePath
+  })
+
+  // 保存二进制文件（导出 docx 等）；content 为 base64 编码
+  ipcMain.handle('dialog:save-binary', async (_event, options: SaveBinaryOptions) => {
+    const win = getWindow()
+    if (!win) return null
+    const { canceled, filePath } = await dialog.showSaveDialog(win, {
+      title: options.title,
+      defaultPath: options.defaultName,
+      filters: options.filters,
+    })
+    if (canceled || !filePath) return null
+    await writeFile(filePath, Buffer.from(options.base64, 'base64'))
+    return filePath
+  })
+
+  // PDF 导出：隐藏窗口加载打印用 HTML → printToPDF → 保存对话框写盘
+  ipcMain.handle('export:pdf', async (_event, options: PdfExportOptions) => {
+    const win = getWindow()
+    if (!win) return null
+    const { canceled, filePath } = await dialog.showSaveDialog(win, {
+      title: options.title,
+      defaultPath: options.defaultName,
+      filters: [{ name: 'PDF 文档', extensions: ['pdf'] }],
+    })
+    if (canceled || !filePath) return null
+    const printWin = new BrowserWindow({ show: false, webPreferences: { sandbox: true } })
+    try {
+      await printWin.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(options.html)}`)
+      const pdf = await printWin.webContents.printToPDF({ printBackground: true, pageSize: 'A4' })
+      await writeFile(filePath, pdf)
+      return filePath
+    } finally {
+      printWin.destroy()
+    }
   })
 
   // ---- 批量处理：文件夹音频扫描 / 批量写文本 ----
@@ -167,10 +202,12 @@ export function registerIpcHandlers(
     })
     return canceled ? null : filePaths[0]
   })
+  // 项目集中存放根目录（新建项目统一建在这里，免每次弹框）
+  ipcMain.handle('projects:get-root', () => settings.projectsRoot)
 
   // ---- 设置（electron-store）与系统 Shell ----
   ipcMain.handle('settings:get', (): AppSettings => {
-    return { refineQualities: settings.refineQualities, modelsDir: models.modelsDir }
+    return { refineQualities: settings.refineQualities, modelsDir: models.modelsDir, projectsRoot: settings.projectsRoot }
   })
   ipcMain.handle('settings:set-refine', (_event, enabled: boolean) => {
     settings.setRefineQualities(Boolean(enabled))

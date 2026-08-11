@@ -15,6 +15,10 @@ const fallback: ChordcraftApi = {
     openAttachment: async () => null,
     openFolder: async () => null,
     saveFile: async () => null,
+    saveBinary: async () => null,
+  },
+  exports: {
+    pdf: async () => null,
   },
   files: {
     getPathForFile: () => '',
@@ -52,6 +56,7 @@ const fallback: ChordcraftApi = {
     addAttachment: async () => ({}),
     removeAttachment: async () => ({}),
     chooseParentDir: async () => null,
+    getRoot: async () => '',
   },
   models: {
     status: async () => ({ isPackaged: false, modelsDir: '', missing: [], downloading: false }),
@@ -59,7 +64,7 @@ const fallback: ChordcraftApi = {
     onProgress: () => () => {},
   },
   settings: {
-    get: async () => ({ refineQualities: false, modelsDir: '' }),
+    get: async () => ({ refineQualities: false, modelsDir: '', projectsRoot: '' }),
     setRefine: async () => false,
   },
   updater: {
