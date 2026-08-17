@@ -1,6 +1,6 @@
 {
   "name": "step-on-chord",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "private": true,
   "description": "Step On Chord — 自动和弦识别与曲式分析桌面应用",
   "author": "ChordCraft",
