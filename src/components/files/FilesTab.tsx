@@ -1,15 +1,15 @@
 import { useCallback, useState } from 'react'
-import { ATTACHMENT_KINDS, type AttachmentKind, type ProjectAttachment } from '../../shared/project-model'
+import { ATTACHMENT_KINDS, updateAttachment, type AttachmentKind, type ProjectAttachment } from '../../shared/project-model'
 import { useProjectStore } from '../../stores/projectStore'
 import { useAccompanimentStore } from '../../stores/accompanimentStore'
 import { isAudioFileName } from '../../utils/audio'
 import { IconPause, IconPlay } from '../icons'
 import { bridge } from '../../bridge'
 
-/** 附件类型中文名 */
+/** 附件类型中文名（用户视角：伴奏 / demo / 成品） */
 const KIND_LABELS: Record<AttachmentKind, string> = {
   accompaniment: '伴奏',
-  arrangement: '编曲',
+  arrangement: '成品',
   demo: 'Demo',
   other: '其他',
 }
@@ -34,7 +34,7 @@ function formatTime(timestamp: number): string {
  * - 元数据存于 project.soc.json，磁盘文件缺失的附件标灰提示
  */
 export function FilesTab() {
-  const { current, openProject } = useProjectStore()
+  const { current, openProject, updateProject } = useProjectStore()
   const [kind, setKind] = useState<AttachmentKind>('other')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -140,7 +140,22 @@ export function FilesTab() {
                 key={attachment.id}
                 className={`flex items-center gap-2 border px-2 py-1.5 ${missing ? 'border-edge bg-base opacity-50' : 'border-edge bg-base-deep'}`}
               >
-                <span className="shrink-0 font-vt text-[10px] text-warm">{KIND_LABELS[attachment.kind]}</span>
+                <select
+                  value={attachment.kind}
+                  onChange={(event) =>
+                    void updateProject((project) =>
+                      updateAttachment(project, attachment.id, { kind: event.target.value as AttachmentKind }),
+                    )
+                  }
+                  title="附件类型（伴奏会自动加载到播放器）"
+                  className="shrink-0 border border-edge bg-base px-1 py-0 font-vt text-[10px] text-warm outline-none focus:border-warm"
+                >
+                  {ATTACHMENT_KINDS.map((item) => (
+                    <option key={item} value={item}>
+                      {KIND_LABELS[item]}
+                    </option>
+                  ))}
+                </select>
                 <span className={`min-w-0 flex-1 truncate font-vt text-sm ${missing ? 'text-ink-faint' : 'text-ink'}`}>
                   {attachment.name}
                   {missing && <span className="ml-1 text-error">（文件缺失）</span>}
@@ -156,9 +171,9 @@ export function FilesTab() {
                       title={activeTrack === `${current?.folderPath}/${attachment.rel_path}` && activePlaying ? '暂停' : '播放'}
                     >
                       {activeTrack === `${current?.folderPath}/${attachment.rel_path}` && activePlaying ? (
-                        <IconPause width={11} height={11} />
+                        <IconPause width={16} height={16} />
                       ) : (
-                        <IconPlay width={11} height={11} />
+                        <IconPlay width={16} height={16} />
                       )}
                     </button>
                   )}

@@ -21,6 +21,8 @@ interface ProjectState {
   openProject: (folderPath: string) => Promise<boolean>
   closeProject: () => void
   deleteProject: (folderPath: string) => Promise<void>
+  /** 项目改名（重命名文件夹 + 更新当前项目与列表） */
+  renameProject: (folderPath: string, newName: string) => Promise<boolean>
   /** 更新当前项目并落盘（歌词/附件/分析等变更统一走这里） */
   updateProject: (updater: (project: SongProject) => SongProject) => Promise<void>
 }
@@ -82,6 +84,29 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       await get().refresh()
     } catch (err) {
       set({ error: err instanceof Error ? err.message : String(err) })
+    }
+  },
+
+  renameProject: async (folderPath, newName) => {
+    try {
+      const result = await bridge.projects.rename(folderPath, newName)
+      const current = get().current
+      // 改的是当前打开的项目时同步 current（folderPath 变了）
+      if (current && current.folderPath === folderPath) {
+        set({
+          current: {
+            ...current,
+            folderPath: result.folderPath,
+            project: result.project as SongProject,
+          },
+          error: null,
+        })
+      }
+      await get().refresh()
+      return true
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : String(err) })
+      return false
     }
   },
 

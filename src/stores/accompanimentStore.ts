@@ -30,6 +30,8 @@ interface AccompanimentState {
 
   /** 加载并播放指定本地音频（经 sidecar /api/audio 拉流） */
   playTrack: (path: string, name: string) => Promise<void>
+  /** 仅加载到播放器（不自动播放，重启/换项目后自动恢复伴奏用） */
+  loadTrack: (path: string, name: string) => Promise<void>
   toggle: () => void
   seek: (seconds: number) => void
   setVolume: (volume: number) => void
@@ -53,11 +55,19 @@ export const useAccompanimentStore = create<AccompanimentState>((set, get) => ({
 
   playTrack: async (path, name) => {
     try {
+      await get().loadTrack(path, name)
+      await audio.play()
+    } catch (err) {
+      set({ error: err instanceof Error ? err.message : String(err), isPlaying: false, isReady: false })
+    }
+  },
+
+  loadTrack: async (path, name) => {
+    try {
       const baseUrl = await resolveEngineBaseUrl() // 引擎未就绪会抛错
       audio.volume = clamp(get().volume, 0, 1)
       set({ trackPath: path, trackName: name, error: null, isReady: false, currentTime: 0, duration: 0 })
       audio.src = `${baseUrl}/api/audio?path=${encodeURIComponent(path)}`
-      await audio.play()
     } catch (err) {
       set({ error: err instanceof Error ? err.message : String(err), isPlaying: false, isReady: false })
     }

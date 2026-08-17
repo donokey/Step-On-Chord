@@ -8,6 +8,7 @@ import {
   PROJECT_FILE_NAME,
   createProject,
   parseProject,
+  renameProject,
   serializeProject,
   validateProject,
   type ProjectAttachment,
@@ -42,6 +43,15 @@ export class ProjectsService {
     const tmp = `${target}.tmp-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`
     await writeFile(tmp, content, 'utf-8')
     await rename(tmp, target)
+  }
+
+  private async exists(target: string): Promise<boolean> {
+    try {
+      await access(target)
+      return true
+    } catch {
+      return false
+    }
   }
 
   /** 新建项目：建文件夹 + 写 project.soc.json + 索引；同名文件夹已存在则抛错 */
@@ -85,6 +95,31 @@ export class ProjectsService {
     validateProject(project)
     await this.atomicWrite(this.projectFilePath(folderPath), serializeProject(project))
     this.index.upsert(project.name, folderPath, project.updated_at)
+  }
+
+  /** 项目改名：重命名文件夹 + 更新 project.soc.json + 刷新索引（歌名经常变） */
+  async rename(folderPath: string, newName: string): Promise<{ folderPath: string; project: SongProject }> {
+    const trimmed = String(newName ?? '').trim()
+    if (!trimmed) throw new Error('项目名不能为空')
+    if (/[\\/:*?"<>|]/.test(trimmed)) {
+      throw new Error('项目名不能包含 \\ / : * ? " < > | 字符')
+    }
+    const oldPath = path.resolve(folderPath)
+    const newPath = path.join(path.dirname(oldPath), trimmed)
+    if (oldPath === newPath) {
+      const project = parseProject(await readFile(this.projectFilePath(oldPath), 'utf-8'))
+      return { folderPath: oldPath, project }
+    }
+    if (await this.exists(newPath)) throw new Error(`已存在同名项目：${trimmed}`)
+
+    const raw = await readFile(this.projectFilePath(oldPath), 'utf-8')
+    const project = renameProject(parseProject(raw), trimmed)
+    // 先重命名文件夹，再更新 soc.json（新路径目录此时才存在）
+    await rename(oldPath, newPath)
+    await this.atomicWrite(this.projectFilePath(newPath), serializeProject(project))
+    this.index.remove(oldPath)
+    this.index.upsert(project.name, newPath, project.updated_at)
+    return { folderPath: newPath, project }
   }
 
   /** 删除项目：整个文件夹进回收站 + 移除索引 */

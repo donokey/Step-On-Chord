@@ -88,6 +88,8 @@ const api = {
     open: (folderPath: string): Promise<ProjectOpenResult> => ipcRenderer.invoke('projects:open', folderPath),
     save: (folderPath: string, project: object): Promise<void> => ipcRenderer.invoke('projects:save', folderPath, project),
     remove: (folderPath: string): Promise<void> => ipcRenderer.invoke('projects:delete', folderPath),
+    rename: (folderPath: string, newName: string): Promise<{ folderPath: string; project: object }> =>
+      ipcRenderer.invoke('projects:rename', folderPath, newName),
     locateAudio: (folderPath: string): Promise<object | null> => ipcRenderer.invoke('projects:locate-audio', folderPath),
     copyAudio: (folderPath: string, sourcePath: string): Promise<object> =>
       ipcRenderer.invoke('projects:copy-audio', folderPath, sourcePath),

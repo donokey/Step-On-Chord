@@ -51,6 +51,7 @@ const fallback: ChordcraftApi = {
     open: async () => ({ folderPath: '', project: {}, audioMissing: false, attachmentMissing: [] }),
     save: async () => {},
     remove: async () => {},
+    rename: async () => ({ folderPath: '', project: {} }),
     locateAudio: async () => null,
     copyAudio: async () => ({}),
     addAttachment: async () => ({}),

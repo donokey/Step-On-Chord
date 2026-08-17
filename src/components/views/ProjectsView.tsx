@@ -6,13 +6,16 @@ import { PixelBuddy } from '../PixelBuddy'
 
 /** 项目视图（v0.2.0 工作台）：歌曲项目列表，新建/打开/删除 */
 export function ProjectsView() {
-  const { projects, loading, error, current, refresh, createProject, openProject, deleteProject, closeProject } =
+  const { projects, loading, error, current, refresh, createProject, openProject, deleteProject, renameProject, closeProject } =
     useProjectStore()
   const [creating, setCreating] = useState(false)
   const [pendingParentDir, setPendingParentDir] = useState<string | null>(null)
   const [nameInput, setNameInput] = useState('')
   const [busy, setBusy] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+  /** 正在改名的项目路径（null = 未在改名） */
+  const [renamingPath, setRenamingPath] = useState<string | null>(null)
+  const [renameInput, setRenameInput] = useState('')
 
   useEffect(() => {
     void refresh()
@@ -50,6 +53,27 @@ export function ProjectsView() {
     },
     [deleteProject],
   )
+
+  const startRename = useCallback((folderPath: string, currentName: string) => {
+    setRenamingPath(folderPath)
+    setRenameInput(currentName)
+  }, [])
+
+  const confirmRename = useCallback(async () => {
+    if (!renamingPath || busy) return
+    const name = renameInput.trim()
+    if (!name) {
+      setRenamingPath(null)
+      return
+    }
+    setBusy(true)
+    try {
+      const ok = await renameProject(renamingPath, name)
+      if (ok) setRenamingPath(null)
+    } finally {
+      setBusy(false)
+    }
+  }, [renamingPath, renameInput, busy, renameProject])
 
   return (
     <div className="bg-atmosphere relative flex min-h-full flex-col gap-2 p-3">
@@ -115,6 +139,27 @@ export function ProjectsView() {
           <ul className="min-h-0 flex-1 space-y-1 overflow-y-auto pr-1">
             {projects.map((item) => (
               <li key={item.id}>
+                {renamingPath === item.folderPath ? (
+                  <div className="flex items-center gap-2 border border-edge-glow bg-base-deep px-3 py-2">
+                    <input
+                      value={renameInput}
+                      onChange={(event) => setRenameInput(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') void confirmRename()
+                        if (event.key === 'Escape') setRenamingPath(null)
+                      }}
+                      placeholder="新项目名（歌曲名）"
+                      autoFocus
+                      className="min-w-0 flex-1 border border-edge bg-base px-2 py-1 font-vt text-sm text-ink outline-none focus:border-warm"
+                    />
+                    <button type="button" onClick={() => void confirmRename()} disabled={busy} className="btn-pixel px-2 py-1 text-xs">
+                      保存
+                    </button>
+                    <button type="button" onClick={() => setRenamingPath(null)} className="btn-pixel px-2 py-1 text-xs">
+                      取消
+                    </button>
+                  </div>
+                ) : (
                 <div className="group flex items-center gap-3 border border-edge bg-base-deep px-3 py-2 transition-colors hover:border-edge-glow">
                   <button
                     type="button"
@@ -125,6 +170,14 @@ export function ProjectsView() {
                     <p className="truncate font-vt text-xs text-ink-faint">
                       {formatDate(item.updatedAt)} · {item.folderPath}
                     </p>
+                  </button>
+                  <button
+                    type="button"
+                    title="重命名"
+                    onClick={() => startRename(item.folderPath, item.name)}
+                    className="btn-pixel h-6 w-6 shrink-0 justify-center px-0 text-xs"
+                  >
+                    ✎
                   </button>
                   <button
                     type="button"
@@ -143,6 +196,7 @@ export function ProjectsView() {
                     ✕
                   </button>
                 </div>
+                )}
               </li>
             ))}
           </ul>

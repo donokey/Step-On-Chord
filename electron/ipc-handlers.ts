@@ -165,6 +165,7 @@ export function registerIpcHandlers(
     return projects.save(folderPath, project as Parameters<ProjectsService['save']>[1])
   })
   ipcMain.handle('projects:delete', (_event, folderPath: string) => projects.remove(folderPath))
+  ipcMain.handle('projects:rename', (_event, folderPath: string, newName: string) => projects.rename(folderPath, newName))
   ipcMain.handle('projects:locate-audio', async (_event, folderPath: string) => {
     const win = getWindow()
     if (!win) return null

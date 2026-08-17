@@ -206,6 +206,13 @@ export function touchProject(project: SongProject, now: number = Date.now()): So
   return { ...project, updated_at: now }
 }
 
+/** 项目改名（歌名经常变）：校验非空，返回新对象 */
+export function renameProject(project: SongProject, name: string, now: number = Date.now()): SongProject {
+  const trimmed = String(name ?? '').trim()
+  if (!trimmed) throw new Error('项目名不能为空')
+  return touchProject({ ...project, name: trimmed }, now)
+}
+
 export function setProjectAudio(project: SongProject, audio: ProjectAudioRef): SongProject {
   return touchProject({ ...project, audio: { ...audio } })
 }

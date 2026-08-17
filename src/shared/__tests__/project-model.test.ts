@@ -12,6 +12,7 @@ import {
   upsertLyricsSection,
   removeLyricsSection,
   reorderLyricsSections,
+  renameProject,
   addAttachment,
   updateAttachment,
   removeAttachment,
@@ -94,6 +95,15 @@ describe('不可变操作', () => {
     const touched = touchProject(p, NOW + 1000)
     expect(p.updated_at).toBe(NOW)
     expect(touched.updated_at).toBe(NOW + 1000)
+  })
+
+  it('renameProject 改名字并更新时间，空名抛错', () => {
+    const p = createProject('旧歌名', NOW)
+    const renamed = renameProject(p, '  新歌名  ', NOW + 2000)
+    expect(renamed.name).toBe('新歌名')
+    expect(renamed.updated_at).toBe(NOW + 2000)
+    expect(p.name).toBe('旧歌名') // 不可变
+    expect(() => renameProject(p, '   ')).toThrow('项目名不能为空')
   })
 
   it('setProjectAudio / clearProjectAudio', () => {

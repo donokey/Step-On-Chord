@@ -23,7 +23,7 @@ export function AccompanimentPlayer() {
   if (!trackPath) {
     return (
       <div className="flex items-center gap-2 border border-edge bg-base-deep px-3 py-1.5">
-        <IconMusicNote width={12} height={12} className="text-ink-faint" />
+        <IconMusicNote width={14} height={14} className="text-ink-faint" />
         <p className="font-vt text-xs text-ink-faint">伴奏播放器 · 到「附件」页给音频点「▶ 播放」，即可边写边听</p>
       </div>
     )
@@ -38,7 +38,7 @@ export function AccompanimentPlayer() {
         className="btn-pixel w-8 shrink-0 justify-center disabled:cursor-not-allowed disabled:opacity-40"
         title={isPlaying ? '暂停' : '播放'}
       >
-        {isPlaying ? <IconPause width={11} height={11} /> : <IconPlay width={11} height={11} />}
+        {isPlaying ? <IconPause width={16} height={16} /> : <IconPlay width={16} height={16} />}
       </button>
 
       <span className="min-w-0 shrink-0 truncate font-vt text-xs text-warm" title={trackName ?? ''}>
@@ -74,7 +74,7 @@ export function AccompanimentPlayer() {
       />
 
       <button type="button" onClick={stop} className="btn-pixel shrink-0 px-1 py-0.5 text-[10px]" title="关闭播放器">
-        <IconClose width={10} height={10} />
+        <IconClose width={14} height={14} />
       </button>
 
       {error && <p className="shrink-0 font-vt text-xs text-error">{error}</p>}

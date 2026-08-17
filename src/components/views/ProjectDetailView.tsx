@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { bridge } from '../../bridge'
 import { useProjectStore } from '../../stores/projectStore'
 import { useAccompanimentStore } from '../../stores/accompanimentStore'
@@ -13,9 +13,14 @@ type DetailTab = 'analysis' | 'lyrics' | 'files'
 
 /** 项目详情（v0.2.0 工作台）：分析 / 歌词 / 附件 三个 tab。T2.4 先落地分析 tab。 */
 export function ProjectDetailView() {
-  const { current, closeProject, updateProject } = useProjectStore()
+  const { current, closeProject, updateProject, renameProject } = useProjectStore()
   const [tab, setTab] = useState<DetailTab>('analysis')
   const [busy, setBusy] = useState(false)
+  /** 改名为 true 时标题变输入框 */
+  const [renaming, setRenaming] = useState(false)
+  const [renameInput, setRenameInput] = useState('')
+  /** 已自动加载伴奏的项目路径（避免重复加载） */
+  const accompanimentLoadedFor = useRef<string | null>(null)
   const folderPath = current?.folderPath
 
   // 离开项目 / 切换项目时停止伴奏播放（播放条常驻本组件顶部，tab 切换不影响）
@@ -48,6 +53,35 @@ export function ProjectDetailView() {
       setBusy(false)
     }
   }, [current, busy, updateProject])
+
+  // 打开/切换项目时自动加载「伴奏」类型附件到播放器（不自动播放，重启后无需重新选择）
+  useEffect(() => {
+    if (!current) return
+    const acc = current.project.attachments.find(
+      (item) => item.kind === 'accompaniment' && !current.attachmentMissing.includes(item.id),
+    )
+    if (!acc) return
+    const fullPath = `${current.folderPath}/${acc.rel_path}`
+    if (accompanimentLoadedFor.current === fullPath) return
+    accompanimentLoadedFor.current = fullPath
+    void useAccompanimentStore.getState().loadTrack(fullPath, acc.name)
+  }, [current])
+
+  const confirmRename = useCallback(async () => {
+    if (!current || busy) return
+    const name = renameInput.trim()
+    if (!name) {
+      setRenaming(false)
+      return
+    }
+    setBusy(true)
+    try {
+      const ok = await renameProject(current.folderPath, name)
+      if (ok) setRenaming(false)
+    } finally {
+      setBusy(false)
+    }
+  }, [current, renameInput, busy, renameProject])
 
   const exportChordPro = useCallback(async () => {
     if (!current || busy) return
@@ -87,7 +121,42 @@ export function ProjectDetailView() {
       <section className="panel-pixel pixel-corners panel-tint-cool flex min-h-0 flex-1 flex-col px-3 py-2">
         <div className="mb-2 flex items-center justify-between gap-2">
           <div className="min-w-0">
-            <PanelTitle symbol="▣">项目 · {project.name}</PanelTitle>
+            {renaming ? (
+              <div className="flex items-center gap-2">
+                <input
+                  value={renameInput}
+                  onChange={(event) => setRenameInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') void confirmRename()
+                    if (event.key === 'Escape') setRenaming(false)
+                  }}
+                  placeholder="新项目名（歌曲名）"
+                  autoFocus
+                  className="min-w-0 w-56 border border-edge bg-base px-2 py-1 font-vt text-sm text-ink outline-none focus:border-warm"
+                />
+                <button type="button" onClick={() => void confirmRename()} disabled={busy} className="btn-pixel px-2 py-0.5 text-xs">
+                  保存
+                </button>
+                <button type="button" onClick={() => setRenaming(false)} className="btn-pixel px-2 py-0.5 text-xs">
+                  取消
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <PanelTitle symbol="▣">项目 · {project.name}</PanelTitle>
+                <button
+                  type="button"
+                  title="重命名项目（歌名变了随时改）"
+                  onClick={() => {
+                    setRenameInput(project.name)
+                    setRenaming(true)
+                  }}
+                  className="btn-pixel px-1.5 py-0.5 text-xs"
+                >
+                  ✎
+                </button>
+              </div>
+            )}
             <p className="truncate font-vt text-xs text-ink-faint">{current.folderPath}</p>
           </div>
           <button type="button" onClick={closeProject} className="btn-pixel px-2 py-1 text-xs">
