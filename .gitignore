@@ -27,9 +27,8 @@ reference/
 # 捆绑的 ffmpeg 二进制（约 200MB，构建时自备）
 resources/ffmpeg/
 
-# 测试音频（版权歌曲，仅本地使用）
-test-audio/
-test-tone.wav
+# 测试音频（入库）
+# test-audio/ 和 test-tone.wav 已入库
 
 # 内部协作文档（非公开内容）
 qoder-startup-prompt.md
