@@ -46,11 +46,11 @@ describe('buildChordPro', () => {
     expect(out).toContain('{title: 晴天}')
     expect(out).toContain('{key: G major}')
     expect(out).toContain('{tempo: 120}')
-    expect(out).toContain('[Verse 1]')
+    expect(out).toContain('{comment: Verse 1}')
     // 用校正后的 display_chord（Em7），不含原始值 Em 单独出现
-    expect(out).toContain('G  Em7')
+    expect(out).toContain('[G]  [Em7]')
     expect(out).toContain('{comment: 歌词}')
-    expect(out).toContain('[主歌1]')
+    expect(out).toContain('{comment: 主歌1}')
     expect(out).toContain('故事的小黄花')
     expect(out.endsWith('\n')).toBe(true)
   })
@@ -61,7 +61,7 @@ describe('buildChordPro', () => {
     const out = buildChordPro(project)
     expect(out).toContain('{title: 新歌}')
     expect(out).not.toContain('{key:')
-    expect(out).toContain('[chorus]') // 无标题时用类型名
+    expect(out).toContain('{comment: chorus}') // 无标题时用类型名
     expect(out).toContain('啦啦啦')
   })
 
@@ -69,7 +69,7 @@ describe('buildChordPro', () => {
     const project = withAnalysis(createProject('纯音乐'))
     const out = buildChordPro(project)
     expect(out).toContain('{title: 纯音乐}')
-    expect(out).toContain('[Chorus]')
+    expect(out).toContain('{comment: Chorus}')
     expect(out).not.toContain('{comment: 歌词}')
   })
 

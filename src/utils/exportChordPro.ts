@@ -3,9 +3,10 @@ import type { SongProject } from '../shared/project-model'
 /**
  * 由歌曲项目生成 ChordPro 文本（.cho）。
  *
- * 方言约定（spec 3.4，v1 不做行内嵌和弦）：
+ * 方言约定（spec 3.4，2026-09-10 修订为标准兼容）：
  * - 头部指令：{title} / {key} / {tempo}
- * - 和弦按段落组织：[段落名] 后跟空格分隔的和弦序列（使用校正后的 display_chord）
+ * - 段落标题用 {comment: 段落名}（标准 [xxx] 是行内和弦标记，作段落头会被第三方解析器拆成假和弦）
+ * - 和弦序列为纯和弦行：[C] [G] [Am]（歌词与和弦不对齐，v1 不做行内嵌和弦）
  * - 歌词附在文末 {comment: 歌词} 之后，按分节给出
  * - 降级：无分析结果只出头部+歌词；无歌词只出头部+和弦；两者皆无只出头部
  */
@@ -25,9 +26,11 @@ export function buildChordPro(project: SongProject): string {
 
   const sections = project.analysis?.analysis.sections ?? []
   for (const section of sections) {
-    lines.push(`[${section.name}]`)
-    const chordLine = section.chords.map((event) => event.display_chord ?? event.chord).join('  ')
-    lines.push(chordLine)
+    lines.push(`{comment: ${section.name}}`)
+    const chordLine = section.chords
+      .map((event) => `[${event.display_chord ?? event.chord}]`)
+      .join('  ')
+    if (chordLine) lines.push(chordLine)
     lines.push('')
   }
 
@@ -37,7 +40,7 @@ export function buildChordPro(project: SongProject): string {
     lines.push('')
     for (const section of lyricsSections) {
       const label = section.title.trim() || section.type
-      lines.push(`[${label}]`)
+      lines.push(`{comment: ${label}}`)
       const text = section.text.trim()
       if (text) lines.push(text)
       lines.push('')
